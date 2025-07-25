@@ -2,7 +2,6 @@
   "name": "angular-migration-analyzer",
   "version": "1.0.0",
   "description": "A comprehensive tool for analyzing Angular projects and preparing migrations by analyzing dependencies, detecting incompatibilities, and generating migration plans",
-  "type": "module",
   "keywords": [
     "angular",
     "migration",
@@ -107,5 +106,6 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
-  }
+  },
+  "type": "module"
 }
