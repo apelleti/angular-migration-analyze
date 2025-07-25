@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AnalysisResult, ConfigurationIssue, ModernizationSuggestion } from '../types/index.js';
+import type {
+  AnalysisResult,
+  ConfigurationIssue,
+  ModernizationSuggestion,
+} from '../types/index.js';
 
 import { BaseAnalyzer } from './BaseAnalyzer.js';
 

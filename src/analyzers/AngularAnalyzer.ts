@@ -1,6 +1,11 @@
 import * as semver from 'semver';
 
-import type { AnalysisResult, AngularPackageInfo, Recommendation, MigrationStep } from '../types/index.js';
+import type {
+  AnalysisResult,
+  AngularPackageInfo,
+  Recommendation,
+  MigrationStep,
+} from '../types/index.js';
 
 import { BaseAnalyzer } from './BaseAnalyzer.js';
 
