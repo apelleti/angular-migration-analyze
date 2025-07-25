@@ -96,7 +96,6 @@ jobs:
   publish:
     needs: [test, build]
     runs-on: ubuntu-latest
-    if: github.event_name == 'main'
     
     steps:
     - uses: actions/checkout@v4

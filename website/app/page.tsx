@@ -22,7 +22,6 @@ import Features from '@/components/Features'
 import Demo from '@/components/Demo'
 import Installation from '@/components/Installation'
 import UseCases from '@/components/UseCases'
-import Testimonials from '@/components/Testimonials'
 import Footer from '@/components/Footer'
 import Navigation from '@/components/Navigation'
 
@@ -37,7 +36,6 @@ export default function HomePage() {
         <Demo />
         <Installation />
         <UseCases />
-        <Testimonials />
       </main>
 
       <Footer />

@@ -438,13 +438,7 @@ npm run dev
 - 👥 Équipes de développement pour l'intégration CI/CD
 - 🎓 Formateurs pour enseigner les bonnes pratiques
 
-## 🌟 Témoignages
 
-> "Angular Migration Analyzer nous a fait gagner des semaines de travail lors de notre migration vers Angular 17!" - *Équipe Tech, Fortune 500*
-
-> "L'outil indispensable pour maintenir nos 50+ projets Angular à jour." - *Lead Dev, Scale-up*
-
-> "Le mode dry-run est génial, on peut tester sans risque!" - *DevOps Engineer*
 
 ## 📄 License
 
