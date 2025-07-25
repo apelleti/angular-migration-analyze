@@ -15,7 +15,11 @@
       "Bash(npm run lint:*)",
       "Bash(npx eslint:*)",
       "Bash(npx prettier:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(node dist/cli.js --version)",
+      "Bash(node fix-imports.js)",
+      "Bash(git checkout:*)",
+      "Bash(node dist/cli.js --help)"
     ],
     "deny": []
   }

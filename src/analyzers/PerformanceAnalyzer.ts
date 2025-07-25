@@ -3,9 +3,9 @@ import type {
   BundleAnalysis,
   DuplicatedDependency,
   OptimizationSuggestion,
-} from '../types';
+} from '../types/index.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class PerformanceAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<

@@ -1,9 +1,9 @@
 import * as semver from 'semver';
 
-import type { AnalysisResult, IncompatibleVersion, DependencyConflict } from '../types';
-import type { NpmPackageInfo } from '../utils/NpmRegistryClient';
+import type { AnalysisResult, IncompatibleVersion, DependencyConflict } from '../types/index.js';
+import type { NpmPackageInfo } from '../utils/NpmRegistryClient.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult>> {

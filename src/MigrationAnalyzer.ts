@@ -1,14 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import pLimit from 'p-limit';
-import { BaseAnalyzer } from './analyzers/BaseAnalyzer';
-import { PeerDependencyAnalyzer } from './analyzers/PeerDependencyAnalyzer';
-import { VersionCompatibilityAnalyzer } from './analyzers/VersionCompatibilityAnalyzer';
-import { AngularAnalyzer } from './analyzers/AngularAnalyzer';
-import { SecurityAnalyzer } from './analyzers/SecurityAnalyzer';
-import { PerformanceAnalyzer } from './analyzers/PerformanceAnalyzer';
-import { ConfigurationAnalyzer } from './analyzers/ConfigurationAnalyzer';
-import { ConfigurationManager } from './utils/ConfigurationManager';
+import { BaseAnalyzer } from './analyzers/BaseAnalyzer.js';
+import { PeerDependencyAnalyzer } from './analyzers/PeerDependencyAnalyzer.js';
+import { VersionCompatibilityAnalyzer } from './analyzers/VersionCompatibilityAnalyzer.js';
+import { AngularAnalyzer } from './analyzers/AngularAnalyzer.js';
+import { SecurityAnalyzer } from './analyzers/SecurityAnalyzer.js';
+import { PerformanceAnalyzer } from './analyzers/PerformanceAnalyzer.js';
+import { ConfigurationAnalyzer } from './analyzers/ConfigurationAnalyzer.js';
+import { ConfigurationManager } from './utils/ConfigurationManager.js';
 import {
   AnalysisResult,
   AnalyzerConfig,
@@ -21,7 +21,7 @@ import {
   OptimizationSuggestion,
   ConfigurationIssue,
   ModernizationSuggestion,
-} from './types';
+} from './types/index.js';
 
 export class MigrationAnalyzer {
   private analyzers: BaseAnalyzer[];

@@ -4,9 +4,9 @@ import type {
   SecurityVulnerability,
   DeprecatedPackage,
   LicenseInfo,
-} from '../types';
+} from '../types/index.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class SecurityAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<

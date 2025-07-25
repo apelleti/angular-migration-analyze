@@ -1,8 +1,8 @@
 import * as semver from 'semver';
 
-import type { AnalysisResult, MissingPeerDep } from '../types';
+import type { AnalysisResult, MissingPeerDep } from '../types/index.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class PeerDependencyAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult>> {

@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AnalyzerConfig } from '../types';
-import { AnalyzerConfigSchema } from '../types';
+import type { AnalyzerConfig } from '../types/index.js';
+import { AnalyzerConfigSchema } from '../types/index.js';
 
 export class ConfigurationManager {
   private static readonly CONFIG_FILE_NAME = '.ng-migrate.json';

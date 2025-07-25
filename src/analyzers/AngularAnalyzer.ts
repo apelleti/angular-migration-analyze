@@ -1,8 +1,8 @@
 import * as semver from 'semver';
 
-import type { AnalysisResult, AngularPackageInfo, Recommendation, MigrationStep } from '../types';
+import type { AnalysisResult, AngularPackageInfo, Recommendation, MigrationStep } from '../types/index.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class AngularAnalyzer extends BaseAnalyzer {
   private readonly ANGULAR_COMPATIBILITY_MATRIX = {

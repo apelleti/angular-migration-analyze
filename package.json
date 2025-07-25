@@ -28,6 +28,7 @@
     "name": "Your Name",
     "email": "your.email@example.com"
   },
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -106,6 +107,5 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
-  },
-  "type": "module"
+  }
 }

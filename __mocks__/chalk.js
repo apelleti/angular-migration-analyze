@@ -26,5 +26,6 @@ const createChalkMock = () => {
   return chalk;
 };
 
-module.exports = createChalkMock();
-module.exports.default = createChalkMock();
+const chalk = createChalkMock();
+module.exports = chalk;
+module.exports.default = chalk;

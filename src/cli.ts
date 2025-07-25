@@ -6,13 +6,13 @@ import ora from 'ora';
 import inquirer from 'inquirer';
 import { table } from 'table';
 import * as fs from 'fs';
-import { MigrationAnalyzer } from './MigrationAnalyzer';
-import { ReportGenerator } from './utils/ReportGenerator';
-import { CommandGenerator } from './utils/CommandGenerator';
-import { SecurityUtils } from './utils/SecurityUtils';
-import { ConfigurationManager } from './utils/ConfigurationManager';
-import { DryRunContext } from './utils/DryRunContext';
-import { AnalysisProgress, ValidationError } from './types';
+import { MigrationAnalyzer } from './MigrationAnalyzer.js';
+import { ReportGenerator } from './utils/ReportGenerator.js';
+import { CommandGenerator } from './utils/CommandGenerator.js';
+import { SecurityUtils } from './utils/SecurityUtils.js';
+import { ConfigurationManager } from './utils/ConfigurationManager.js';
+import { DryRunContext } from './utils/DryRunContext.js';
+import { AnalysisProgress, ValidationError } from './types/index.js';
 
 const program = new Command();
 

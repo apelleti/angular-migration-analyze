@@ -5,6 +5,10 @@ import * as path from 'path';
 jest.mock('fs');
 jest.mock('../src/utils/NpmRegistryClient');
 
+// Import mocked class
+import { NpmRegistryClient } from '../src/utils/NpmRegistryClient';
+const MockedNpmRegistryClient = NpmRegistryClient as jest.MockedClass<typeof NpmRegistryClient>;
+
 describe('MigrationAnalyzer', () => {
   const mockProjectPath = '/test/project';
   const mockPackageJson = {
@@ -24,11 +28,86 @@ describe('MigrationAnalyzer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
+    // Mock NpmRegistryClient
+    MockedNpmRegistryClient.mockImplementation(() => ({
+      getPackageInfo: jest.fn(),
+      getLatestVersion: jest.fn().mockResolvedValue('18.0.0'),
+      getAngularCompatibilityMatrix: jest.fn().mockResolvedValue({}),
+      getBulkPackageInfo: jest.fn().mockResolvedValue({
+        '@angular/core': {
+          name: '@angular/core',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/core', version: '15.0.0' },
+            '16.0.0': { name: '@angular/core', version: '16.0.0' },
+            '17.0.0': { name: '@angular/core', version: '17.0.0' },
+            '18.0.0': { name: '@angular/core', version: '18.0.0' }
+          }
+        },
+        '@angular/common': {
+          name: '@angular/common',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/common', version: '15.0.0' },
+            '16.0.0': { name: '@angular/common', version: '16.0.0' },
+            '17.0.0': { name: '@angular/common', version: '17.0.0' },
+            '18.0.0': { name: '@angular/common', version: '18.0.0' }
+          }
+        }
+      }),
+      testConnection: jest.fn().mockResolvedValue(true)
+    } as any));
+    
     // Mock file system
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    (fs.existsSync as jest.Mock).mockImplementation((filePath: string) => {
+      const normalizedPath = filePath.toString();
+      if (normalizedPath.includes('pnpm-lock.yaml') || normalizedPath.includes('yarn.lock')) {
+        return false;
+      }
+      return true;
+    });
+    (fs.statSync as jest.Mock).mockImplementation((filePath: string) => {
+      const normalizedPath = filePath.toString();
+      if (normalizedPath.includes('pnpm-lock.yaml') || normalizedPath.includes('yarn.lock')) {
+        throw new Error(`ENOENT: no such file or directory, stat '${filePath}'`);
+      }
+      return {
+        isFile: () => true,
+        isDirectory: () => false
+      };
+    });
     (fs.readFileSync as jest.Mock).mockImplementation((filePath: string) => {
       if (filePath.endsWith('package.json')) {
         return JSON.stringify(mockPackageJson);
+      }
+      if (filePath.endsWith('package-lock.json')) {
+        return JSON.stringify({
+          lockfileVersion: 2,
+          name: 'test-project',
+          version: '1.0.0',
+          packages: {}
+        });
+      }
+      if (filePath.endsWith('.ng-migrate.json')) {
+        return JSON.stringify({
+          targetVersion: '16',
+          skipPackages: [],
+          customRules: []
+        });
+      }
+      if (filePath.endsWith('angular.json')) {
+        return JSON.stringify({
+          version: 1,
+          projects: {}
+        });
+      }
+      if (filePath.endsWith('tsconfig.json')) {
+        return JSON.stringify({
+          compilerOptions: {
+            target: 'ES2020',
+            module: 'ES2020'
+          }
+        });
       }
       return '';
     });
@@ -72,11 +151,11 @@ describe('MigrationAnalyzer', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: '@angular/core',
-            currentVersion: '^15.0.0'
+            currentVersion: '15.0.0'
           }),
           expect.objectContaining({
             name: '@angular/common',
-            currentVersion: '^15.0.0'
+            currentVersion: '15.0.0'
           })
         ])
       );
@@ -92,18 +171,19 @@ describe('MigrationAnalyzer', () => {
   });
 
   describe('error handling', () => {
-    it('should throw error if package.json not found', async () => {
+    it('should throw error if package.json not found', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
+      (fs.statSync as jest.Mock).mockImplementation(() => {
+        throw new Error('ENOENT: no such file or directory');
+      });
       
-      const analyzer = new MigrationAnalyzer(mockProjectPath);
-      await expect(analyzer.analyze()).rejects.toThrow();
+      expect(() => new MigrationAnalyzer(mockProjectPath)).toThrow('Failed to initialize analyzer');
     });
 
-    it('should handle invalid package.json', async () => {
+    it('should handle invalid package.json', () => {
       (fs.readFileSync as jest.Mock).mockReturnValue('invalid json');
       
-      const analyzer = new MigrationAnalyzer(mockProjectPath);
-      await expect(analyzer.analyze()).rejects.toThrow();
+      expect(() => new MigrationAnalyzer(mockProjectPath)).toThrow('Failed to initialize analyzer');
     });
   });
 });

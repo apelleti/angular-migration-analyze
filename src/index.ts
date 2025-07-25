@@ -1,27 +1,27 @@
 // Main API exports
-export { MigrationAnalyzer } from './MigrationAnalyzer';
+export { MigrationAnalyzer } from './MigrationAnalyzer.js';
 
 // Types exports
-export * from './types';
+export * from './types/index.js';
 
 // Analyzer exports
-export { BaseAnalyzer } from './analyzers/BaseAnalyzer';
-export { PeerDependencyAnalyzer } from './analyzers/PeerDependencyAnalyzer';
-export { VersionCompatibilityAnalyzer } from './analyzers/VersionCompatibilityAnalyzer';
-export { AngularAnalyzer } from './analyzers/AngularAnalyzer';
-export { SecurityAnalyzer } from './analyzers/SecurityAnalyzer';
-export { PerformanceAnalyzer } from './analyzers/PerformanceAnalyzer';
-export { ConfigurationAnalyzer } from './analyzers/ConfigurationAnalyzer';
+export { BaseAnalyzer } from './analyzers/BaseAnalyzer.js';
+export { PeerDependencyAnalyzer } from './analyzers/PeerDependencyAnalyzer.js';
+export { VersionCompatibilityAnalyzer } from './analyzers/VersionCompatibilityAnalyzer.js';
+export { AngularAnalyzer } from './analyzers/AngularAnalyzer.js';
+export { SecurityAnalyzer } from './analyzers/SecurityAnalyzer.js';
+export { PerformanceAnalyzer } from './analyzers/PerformanceAnalyzer.js';
+export { ConfigurationAnalyzer } from './analyzers/ConfigurationAnalyzer.js';
 
 // Utility exports
-export { NpmRegistryClient } from './utils/NpmRegistryClient';
-export type { NpmPackageInfo, NpmVersionInfo } from './utils/NpmRegistryClient';
-export { ReportGenerator } from './utils/ReportGenerator';
-export { CommandGenerator } from './utils/CommandGenerator';
-export { SecurityUtils } from './utils/SecurityUtils';
-export { ConfigurationManager } from './utils/ConfigurationManager';
-export { DryRunContext } from './utils/DryRunContext';
-export type { DryRunCommand, DryRunReport } from './utils/DryRunContext';
+export { NpmRegistryClient } from './utils/NpmRegistryClient.js';
+export type { NpmPackageInfo, NpmVersionInfo } from './utils/NpmRegistryClient.js';
+export { ReportGenerator } from './utils/ReportGenerator.js';
+export { CommandGenerator } from './utils/CommandGenerator.js';
+export { SecurityUtils } from './utils/SecurityUtils.js';
+export { ConfigurationManager } from './utils/ConfigurationManager.js';
+export { DryRunContext } from './utils/DryRunContext.js';
+export type { DryRunCommand, DryRunReport } from './utils/DryRunContext.js';
 
 // Version
 export const VERSION = '1.0.0';

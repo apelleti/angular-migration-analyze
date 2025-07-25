@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 
-import type { AnalysisResult } from '../types';
+import type { AnalysisResult } from '../types/index.js';
 
 export class ReportGenerator {
   async generateJSON(results: AnalysisResult, filePath: string): Promise<void> {

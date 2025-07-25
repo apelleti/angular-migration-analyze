@@ -1,4 +1,4 @@
-import type { AnalysisResult } from '../types';
+import type { AnalysisResult } from '../types/index.js';
 
 export class CommandGenerator {
   generateFixCommands(results: any): string[] {

@@ -4,8 +4,8 @@ import https from 'https';
 import pLimit from 'p-limit';
 import * as semver from 'semver';
 
-import type { AnalyzerConfig } from '../types';
-import { NetworkError, ValidationError, ParseError } from '../types';
+import type { AnalyzerConfig } from '../types/index.js';
+import { NetworkError, ValidationError, ParseError } from '../types/index.js';
 
 export interface NpmPackageInfo {
   name: string;

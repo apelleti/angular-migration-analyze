@@ -13,9 +13,9 @@ import type {
   AnalysisSummary,
   AnalysisMetadata,
   AnalysisProgress,
-} from '../types';
-import { ParseError, ValidationError } from '../types';
-import { NpmRegistryClient } from '../utils/NpmRegistryClient';
+} from '../types/index.js';
+import { ParseError, ValidationError } from '../types/index.js';
+import { NpmRegistryClient } from '../utils/NpmRegistryClient.js';
 
 export abstract class BaseAnalyzer {
   protected packageJson: PackageInfo;

@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AnalysisResult, ConfigurationIssue, ModernizationSuggestion } from '../types';
+import type { AnalysisResult, ConfigurationIssue, ModernizationSuggestion } from '../types/index.js';
 
-import { BaseAnalyzer } from './BaseAnalyzer';
+import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class ConfigurationAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<
