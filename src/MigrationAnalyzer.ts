@@ -20,7 +20,7 @@ import {
   DuplicatedDependency,
   OptimizationSuggestion,
   ConfigurationIssue,
-  ModernizationSuggestion
+  ModernizationSuggestion,
 } from './types';
 
 export class MigrationAnalyzer {
@@ -45,38 +45,48 @@ export class MigrationAnalyzer {
       new AngularAnalyzer(this.projectRoot, this.config, progressCallback),
       new SecurityAnalyzer(this.projectRoot, this.config, progressCallback),
       new PerformanceAnalyzer(this.projectRoot, this.config, progressCallback),
-      new ConfigurationAnalyzer(this.projectRoot, this.config, progressCallback)
+      new ConfigurationAnalyzer(this.projectRoot, this.config, progressCallback),
     ];
   }
 
-  async analyze(): Promise<AnalysisResult & {
-    vulnerabilities?: SecurityVulnerability[];
-    deprecatedPackages?: DeprecatedPackage[];
-    licenseIssues?: LicenseInfo[];
-    bundleAnalysis?: BundleAnalysis;
-    duplicatedDependencies?: DuplicatedDependency[];
-    optimizationSuggestions?: OptimizationSuggestion[];
-    configurationIssues?: ConfigurationIssue[];
-    modernizationSuggestions?: ModernizationSuggestion[];
-  }> {
+  async analyze(): Promise<
+    AnalysisResult & {
+      vulnerabilities?: SecurityVulnerability[];
+      deprecatedPackages?: DeprecatedPackage[];
+      licenseIssues?: LicenseInfo[];
+      bundleAnalysis?: BundleAnalysis;
+      duplicatedDependencies?: DuplicatedDependency[];
+      optimizationSuggestions?: OptimizationSuggestion[];
+      configurationIssues?: ConfigurationIssue[];
+      modernizationSuggestions?: ModernizationSuggestion[];
+    }
+  > {
     const startTime = Date.now();
-    
-    console.log('🚀 Démarrage de l\'analyse complète...');
-    
+
+    console.log("🚀 Démarrage de l'analyse complète...");
+
     try {
       // Update progress
       this.updateProgress(0, this.analyzers.length, 'Initialisation');
-      
+
       // Create a limiter to control concurrency
       const limit = pLimit(3); // Run max 3 analyzers in parallel to avoid overloading
-      
+
       // Run all analyzers in parallel with controlled concurrency
-      const analysisPromises = this.analyzers.map((analyzer, index) => 
+      const analysisPromises = this.analyzers.map((analyzer, index) =>
         limit(async () => {
           try {
-            this.updateProgress(index, this.analyzers.length, `Analyse ${analyzer.constructor.name}`);
+            this.updateProgress(
+              index,
+              this.analyzers.length,
+              `Analyse ${analyzer.constructor.name}`
+            );
             const result = await analyzer.analyze();
-            this.updateProgress(index + 1, this.analyzers.length, `Terminé ${analyzer.constructor.name}`);
+            this.updateProgress(
+              index + 1,
+              this.analyzers.length,
+              `Terminé ${analyzer.constructor.name}`
+            );
             return result;
           } catch (error) {
             console.warn(`Analyzer ${analyzer.constructor.name} failed:`, error.message);
@@ -86,21 +96,21 @@ export class MigrationAnalyzer {
       );
 
       const results = await Promise.all(analysisPromises);
-      
+
       // Merge results
       const mergedResult = this.mergeResults(results);
-      
+
       // Calculate execution time
       const duration = Date.now() - startTime;
-      
+
       // Generate summary and metadata
       const summary = this.generateSummary(mergedResult);
       const metadata = this.generateMetadata(duration);
-      
+
       const finalResult = {
         ...mergedResult,
         summary,
-        metadata
+        metadata,
       };
 
       // Cache results if enabled
@@ -109,9 +119,8 @@ export class MigrationAnalyzer {
       }
 
       this.updateProgress(this.analyzers.length, this.analyzers.length, 'Analyse terminée');
-      
+
       return finalResult;
-      
     } catch (error) {
       console.error('Analysis failed:', error);
       throw error;
@@ -121,12 +130,12 @@ export class MigrationAnalyzer {
   async analyzeWithCache(useCache: boolean = true): Promise<any> {
     if (useCache && this.config.cache.enabled) {
       const cacheFile = path.join(this.projectRoot, '.migration-cache.json');
-      
+
       try {
         if (fs.existsSync(cacheFile)) {
           const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
           const cacheAge = Date.now() - cache.timestamp;
-          
+
           // Cache valid for the configured TTL
           if (cacheAge < this.config.cache.ttl) {
             console.log('📄 Utilisation du cache existant...');
@@ -139,7 +148,7 @@ export class MigrationAnalyzer {
     }
 
     const results = await this.analyze();
-    
+
     return results;
   }
 
@@ -157,27 +166,35 @@ export class MigrationAnalyzer {
       duplicatedDependencies: [],
       optimizationSuggestions: [],
       configurationIssues: [],
-      modernizationSuggestions: []
+      modernizationSuggestions: [],
     };
 
     for (const result of results) {
       // Standard fields
       if (result.missingPeerDeps) merged.missingPeerDeps.push(...result.missingPeerDeps);
-      if (result.incompatibleVersions) merged.incompatibleVersions.push(...result.incompatibleVersions);
+      if (result.incompatibleVersions)
+        merged.incompatibleVersions.push(...result.incompatibleVersions);
       if (result.conflicts) merged.conflicts.push(...result.conflicts);
       if (result.angularPackages) merged.angularPackages.push(...result.angularPackages);
       if (result.recommendations) merged.recommendations.push(...result.recommendations);
       if (result.migrationPath) merged.migrationPath.push(...result.migrationPath);
-      
+
       // Extended fields from specialized analyzers
-      if ((result as any).vulnerabilities) merged.vulnerabilities.push(...(result as any).vulnerabilities);
-      if ((result as any).deprecatedPackages) merged.deprecatedPackages.push(...(result as any).deprecatedPackages);
-      if ((result as any).licenseIssues) merged.licenseIssues.push(...(result as any).licenseIssues);
-      if ((result as any).duplicatedDependencies) merged.duplicatedDependencies.push(...(result as any).duplicatedDependencies);
-      if ((result as any).optimizationSuggestions) merged.optimizationSuggestions.push(...(result as any).optimizationSuggestions);
-      if ((result as any).configurationIssues) merged.configurationIssues.push(...(result as any).configurationIssues);
-      if ((result as any).modernizationSuggestions) merged.modernizationSuggestions.push(...(result as any).modernizationSuggestions);
-      
+      if ((result as any).vulnerabilities)
+        merged.vulnerabilities.push(...(result as any).vulnerabilities);
+      if ((result as any).deprecatedPackages)
+        merged.deprecatedPackages.push(...(result as any).deprecatedPackages);
+      if ((result as any).licenseIssues)
+        merged.licenseIssues.push(...(result as any).licenseIssues);
+      if ((result as any).duplicatedDependencies)
+        merged.duplicatedDependencies.push(...(result as any).duplicatedDependencies);
+      if ((result as any).optimizationSuggestions)
+        merged.optimizationSuggestions.push(...(result as any).optimizationSuggestions);
+      if ((result as any).configurationIssues)
+        merged.configurationIssues.push(...(result as any).configurationIssues);
+      if ((result as any).modernizationSuggestions)
+        merged.modernizationSuggestions.push(...(result as any).modernizationSuggestions);
+
       // Handle single-value fields
       if ((result as any).bundleAnalysis && !merged.bundleAnalysis) {
         merged.bundleAnalysis = (result as any).bundleAnalysis;
@@ -186,7 +203,7 @@ export class MigrationAnalyzer {
 
     // Deduplicate recommendations
     merged.recommendations = this.deduplicateRecommendations(merged.recommendations);
-    
+
     // Sort migration steps by order
     merged.migrationPath.sort((a: any, b: any) => a.order - b.order);
 
@@ -206,21 +223,29 @@ export class MigrationAnalyzer {
   }
 
   private generateSummary(results: any): any {
-    const criticalIssues = 
+    const criticalIssues =
       (results.missingPeerDeps?.filter((dep: any) => dep.severity === 'error') || []).length +
       (results.incompatibleVersions?.filter((iv: any) => iv.severity === 'error') || []).length +
       (results.conflicts?.filter((c: any) => c.severity === 'error') || []).length +
-      (results.vulnerabilities?.filter((v: any) => v.severity === 'critical' || v.severity === 'high') || []).length;
+      (
+        results.vulnerabilities?.filter(
+          (v: any) => v.severity === 'critical' || v.severity === 'high'
+        ) || []
+      ).length;
 
-    const warnings = 
+    const warnings =
       (results.missingPeerDeps?.filter((dep: any) => dep.severity === 'warning') || []).length +
       (results.incompatibleVersions?.filter((iv: any) => iv.severity === 'warning') || []).length +
       (results.conflicts?.filter((c: any) => c.severity === 'warning') || []).length +
-      (results.vulnerabilities?.filter((v: any) => v.severity === 'moderate' || v.severity === 'low') || []).length +
+      (
+        results.vulnerabilities?.filter(
+          (v: any) => v.severity === 'moderate' || v.severity === 'low'
+        ) || []
+      ).length +
       (results.configurationIssues?.filter((ci: any) => ci.severity === 'warning') || []).length;
 
     const totalIssues = criticalIssues + warnings;
-    
+
     // Calculate health score (0-100)
     let healthScore = 100;
     healthScore -= criticalIssues * 15; // Critical issues impact more
@@ -236,8 +261,9 @@ export class MigrationAnalyzer {
       recommendationsCount: results.recommendations?.length || 0,
       healthScore,
       securityIssues: results.vulnerabilities?.length || 0,
-      performanceIssues: results.optimizationSuggestions?.filter((s: any) => s.impact === 'high').length || 0,
-      configurationIssues: results.configurationIssues?.length || 0
+      performanceIssues:
+        results.optimizationSuggestions?.filter((s: any) => s.impact === 'high').length || 0,
+      configurationIssues: results.configurationIssues?.length || 0,
     };
   }
 
@@ -254,8 +280,8 @@ export class MigrationAnalyzer {
         registry: this.config.registry,
         cacheEnabled: this.config.cache.enabled,
         includeDevDeps: this.config.analysis.includeDevDependencies,
-        excludedPackages: this.config.analysis.excludePackages.length
-      }
+        excludedPackages: this.config.analysis.excludePackages.length,
+      },
     };
   }
 
@@ -263,7 +289,7 @@ export class MigrationAnalyzer {
     const checks = [
       { file: 'pnpm-lock.yaml', manager: 'pnpm' as const },
       { file: 'yarn.lock', manager: 'yarn' as const },
-      { file: 'package-lock.json', manager: 'npm' as const }
+      { file: 'package-lock.json', manager: 'npm' as const },
     ];
 
     for (const check of checks) {
@@ -281,9 +307,9 @@ export class MigrationAnalyzer {
       const cacheData = {
         timestamp: Date.now(),
         data: results,
-        version: '1.0.0'
+        version: '1.0.0',
       };
-      
+
       await fs.promises.writeFile(cacheFile, JSON.stringify(cacheData, null, 2));
       console.log('💾 Résultats mis en cache');
     } catch (error) {
@@ -299,7 +325,7 @@ export class MigrationAnalyzer {
       completed: current,
       currentTask: task,
       percentage: Math.round((current / total) * 100),
-      startTime: Date.now()
+      startTime: Date.now(),
     };
 
     this.progressCallback(progress);
@@ -321,20 +347,20 @@ export class MigrationAnalyzer {
   // Get cache information
   getCacheInfo(): { exists: boolean; age?: number; size?: number } {
     const cacheFile = path.join(this.projectRoot, '.migration-cache.json');
-    
+
     try {
       if (fs.existsSync(cacheFile)) {
         const stats = fs.statSync(cacheFile);
         return {
           exists: true,
           age: Date.now() - stats.mtime.getTime(),
-          size: stats.size
+          size: stats.size,
         };
       }
     } catch (error) {
       // Cache file exists but can't be read
     }
-    
+
     return { exists: false };
   }
 }

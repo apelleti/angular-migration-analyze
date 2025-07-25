@@ -70,34 +70,42 @@ export const AnalyzerConfigSchema = z.object({
   timeout: z.number().min(1000).max(60000).default(10000),
   retries: z.number().min(0).max(5).default(3),
   maxConcurrentRequests: z.number().min(1).max(50).default(10),
-  
-  network: z.object({
-    proxy: z.object({
-      enabled: z.boolean().default(false),
-      host: z.string().optional(),
-      port: z.number().optional(),
-      protocol: z.enum(['http', 'https']).default('http'),
-      bypassList: z.array(z.string()).default([])
-    }).optional(),
-    strictSSL: z.boolean().default(true),
-    timeout: z.number().default(30000)
-  }).default({}),
-  
-  cache: z.object({
-    enabled: z.boolean().default(true),
-    ttl: z.number().min(60000).max(3600000).default(300000),
-    maxSize: z.number().min(10).max(1000).default(100),
-    persistToDisk: z.boolean().default(false),
-    diskCachePath: z.string().default('./.ng-migrate-cache')
-  }).default({}),
-  
-  analysis: z.object({
-    includeDevDependencies: z.boolean().default(true),
-    checkVulnerabilities: z.boolean().default(true),
-    skipOptionalPeerDeps: z.boolean().default(false),
-    excludePackages: z.array(z.string()).default([]),
-    offlineMode: z.boolean().default(false)
-  }).default({})
+
+  network: z
+    .object({
+      proxy: z
+        .object({
+          enabled: z.boolean().default(false),
+          host: z.string().optional(),
+          port: z.number().optional(),
+          protocol: z.enum(['http', 'https']).default('http'),
+          bypassList: z.array(z.string()).default([]),
+        })
+        .optional(),
+      strictSSL: z.boolean().default(true),
+      timeout: z.number().default(30000),
+    })
+    .default({}),
+
+  cache: z
+    .object({
+      enabled: z.boolean().default(true),
+      ttl: z.number().min(60000).max(3600000).default(300000),
+      maxSize: z.number().min(10).max(1000).default(100),
+      persistToDisk: z.boolean().default(false),
+      diskCachePath: z.string().default('./.ng-migrate-cache'),
+    })
+    .default({}),
+
+  analysis: z
+    .object({
+      includeDevDependencies: z.boolean().default(true),
+      checkVulnerabilities: z.boolean().default(true),
+      skipOptionalPeerDeps: z.boolean().default(false),
+      excludePackages: z.array(z.string()).default([]),
+      offlineMode: z.boolean().default(false),
+    })
+    .default({}),
 });
 
 export type AnalyzerConfig = z.infer<typeof AnalyzerConfigSchema>;
@@ -114,7 +122,7 @@ export interface ProxyConfig {
 // Erreurs personnalisées
 export class NetworkError extends Error {
   constructor(
-    message: string, 
+    message: string,
     public statusCode?: number,
     public retryAfter?: number
   ) {
@@ -124,14 +132,20 @@ export class NetworkError extends Error {
 }
 
 export class ParseError extends Error {
-  constructor(message: string, public filePath?: string) {
+  constructor(
+    message: string,
+    public filePath?: string
+  ) {
     super(message);
     this.name = 'ParseError';
   }
 }
 
 export class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
+  constructor(
+    message: string,
+    public field?: string
+  ) {
     super(message);
     this.name = 'ValidationError';
   }
@@ -270,8 +284,8 @@ export interface LicenseInfo {
 // Performance types
 export interface BundleAnalysis {
   totalSize: number;
-  packageSizes: Array<{name: string; size: number}>;
-  largestPackages: Array<{name: string; size: number}>;
+  packageSizes: Array<{ name: string; size: number }>;
+  largestPackages: Array<{ name: string; size: number }>;
   estimatedBundleSize: number;
 }
 

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AnalyzerConfig} from '../types';
+import type { AnalyzerConfig } from '../types';
 import { AnalyzerConfigSchema } from '../types';
 
 export class ConfigurationManager {
@@ -15,25 +15,25 @@ export class ConfigurationManager {
       proxy: {
         enabled: false,
         protocol: 'http',
-        bypassList: []
+        bypassList: [],
       },
       strictSSL: true,
-      timeout: 30000
+      timeout: 30000,
     },
     cache: {
       enabled: true,
       ttl: 300000,
       maxSize: 100,
       persistToDisk: false,
-      diskCachePath: './.ng-migrate-cache'
+      diskCachePath: './.ng-migrate-cache',
     },
     analysis: {
       includeDevDependencies: true,
       checkVulnerabilities: true,
       skipOptionalPeerDeps: false,
       excludePackages: [],
-      offlineMode: false
-    }
+      offlineMode: false,
+    },
   };
 
   static loadConfiguration(projectRoot: string = process.cwd()): AnalyzerConfig {
@@ -41,7 +41,7 @@ export class ConfigurationManager {
     const config = {
       ...this.DEFAULT_CONFIG,
       ...this.loadFromFile(projectRoot),
-      ...this.loadFromEnvironment()
+      ...this.loadFromEnvironment(),
     };
 
     // Validate configuration
@@ -55,7 +55,7 @@ export class ConfigurationManager {
 
   private static loadFromFile(projectRoot: string): Partial<AnalyzerConfig> {
     const configPath = path.join(projectRoot, this.CONFIG_FILE_NAME);
-    
+
     try {
       if (fs.existsSync(configPath)) {
         const fileContent = fs.readFileSync(configPath, 'utf8');
@@ -85,13 +85,13 @@ export class ConfigurationManager {
 
     // Cache settings from environment
     if (process.env.NG_MIGRATE_CACHE === 'false') {
-      envConfig.cache = { 
-        ...envConfig.cache, 
+      envConfig.cache = {
+        ...envConfig.cache,
         enabled: false,
         ttl: 300000,
         maxSize: 100,
         persistToDisk: false,
-        diskCachePath: '.cache'
+        diskCachePath: '.cache',
       };
     }
 
@@ -108,8 +108,8 @@ export class ConfigurationManager {
               host: url.hostname,
               port: parseInt(url.port || '80', 10),
               protocol: url.protocol.replace(':', '') as 'http' | 'https',
-              bypassList: process.env.NO_PROXY?.split(',') || []
-            }
+              bypassList: process.env.NO_PROXY?.split(',') || [],
+            },
           };
         } catch (error) {
           console.warn('Invalid proxy URL in environment:', proxyUrl);
@@ -127,17 +127,13 @@ export class ConfigurationManager {
 
   static saveConfiguration(config: AnalyzerConfig, projectRoot: string = process.cwd()): void {
     const configPath = path.join(projectRoot, this.CONFIG_FILE_NAME);
-    
+
     try {
       // Validate configuration before saving
       const validatedConfig = AnalyzerConfigSchema.parse(config);
-      
-      fs.writeFileSync(
-        configPath, 
-        JSON.stringify(validatedConfig, null, 2),
-        'utf8'
-      );
-      
+
+      fs.writeFileSync(configPath, JSON.stringify(validatedConfig, null, 2), 'utf8');
+
       console.log(`💾 Configuration saved to ${this.CONFIG_FILE_NAME}`);
     } catch (error) {
       throw new Error(`Failed to save configuration: ${error.message}`);
@@ -146,7 +142,7 @@ export class ConfigurationManager {
 
   static generateDefaultConfigFile(projectRoot: string = process.cwd()): void {
     const configPath = path.join(projectRoot, this.CONFIG_FILE_NAME);
-    
+
     if (fs.existsSync(configPath)) {
       console.warn(`Configuration file ${this.CONFIG_FILE_NAME} already exists`);
       return;
@@ -156,30 +152,23 @@ export class ConfigurationManager {
       registry: 'https://registry.npmjs.org',
       cache: {
         enabled: true,
-        ttl: 300000
+        ttl: 300000,
       },
       analysis: {
         includeDevDependencies: true,
         checkVulnerabilities: true,
-        excludePackages: [
-          '@types/*',
-          "eslint-*"
-        ]
+        excludePackages: ['@types/*', 'eslint-*'],
       },
       network: {
         proxy: {
           enabled: false,
           host: 'proxy.company.com',
-          port: 8080
-        }
-      }
+          port: 8080,
+        },
+      },
     };
 
-    fs.writeFileSync(
-      configPath,
-      JSON.stringify(exampleConfig, null, 2),
-      'utf8'
-    );
+    fs.writeFileSync(configPath, JSON.stringify(exampleConfig, null, 2), 'utf8');
 
     console.log(`📝 Default configuration file created: ${this.CONFIG_FILE_NAME}`);
   }

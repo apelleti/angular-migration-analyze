@@ -7,12 +7,12 @@ export class ReportGenerator {
     const report = {
       timestamp: new Date().toISOString(),
       summary: results.summary,
-      ...results
+      ...results,
     };
-    
+
     await fs.writeFile(filePath, JSON.stringify(report, null, 2));
   }
-  
+
   async generateHTML(results: AnalysisResult, filePath: string): Promise<void> {
     const html = `
 <!DOCTYPE html>
@@ -48,10 +48,10 @@ export class ReportGenerator {
     ${this.generateHTMLMigrationPath(results)}
 </body>
 </html>`;
-    
+
     await fs.writeFile(filePath, html);
   }
-  
+
   private generateHTMLSummary(results: AnalysisResult): string {
     const summary = results.summary;
     return `
@@ -64,19 +64,23 @@ export class ReportGenerator {
         <p><strong>Recommandations:</strong> ${summary.recommendationsCount}</p>
     </div>`;
   }
-  
+
   private generateHTMLMissingPeerDeps(results: AnalysisResult): string {
     if (results.missingPeerDeps.length === 0) return '';
-    
-    const rows = results.missingPeerDeps.map(dep => `
+
+    const rows = results.missingPeerDeps
+      .map(
+        dep => `
         <tr>
             <td>${dep.package}</td>
             <td>${dep.requiredBy}</td>
             <td>${dep.requiredVersion}</td>
             <td>${dep.optional ? '✅ Optionnel' : '❌ Requis'}</td>
         </tr>
-    `).join('');
-    
+    `
+      )
+      .join('');
+
     return `
     <div class="section error">
         <h2>❌ Peer Dependencies Manquantes</h2>
@@ -88,40 +92,52 @@ export class ReportGenerator {
         </table>
     </div>`;
   }
-  
+
   private generateHTMLConflicts(results: AnalysisResult): string {
     if (results.conflicts.length === 0) return '';
-    
-    const conflictItems = results.conflicts.map(conflict => `
+
+    const conflictItems = results.conflicts
+      .map(
+        conflict => `
         <li>
             <strong>${conflict.package}</strong>
             <ul>
-                ${conflict.versions.map(v => `
+                ${conflict.versions
+                  .map(
+                    v => `
                     <li>${v.version} - requis par: ${v.requiredBy.join(', ')}</li>
-                `).join('')}
+                `
+                  )
+                  .join('')}
             </ul>
         </li>
-    `).join('');
-    
+    `
+      )
+      .join('');
+
     return `
     <div class="section warning">
         <h2>⚠️ Conflits de Versions</h2>
         <ul>${conflictItems}</ul>
     </div>`;
   }
-  
+
   private generateHTMLAngularPackages(results: AnalysisResult): string {
     if (results.angularPackages.length === 0) return '';
-    
-    const rows = results.angularPackages.map(pkg => `
+
+    const rows = results.angularPackages
+      .map(
+        pkg => `
         <tr>
             <td>${pkg.name}</td>
             <td>${pkg.currentVersion}</td>
             <td>${pkg.targetVersion}</td>
             <td>${pkg.currentVersion === pkg.targetVersion ? '✅ À jour' : '🔄 Migration disponible'}</td>
         </tr>
-    `).join('');
-    
+    `
+      )
+      .join('');
+
     return `
     <div class="section">
         <h2>🅰️ Packages Angular</h2>
@@ -133,40 +149,46 @@ export class ReportGenerator {
         </table>
     </div>`;
   }
-  
+
   private generateHTMLRecommendations(results: AnalysisResult): string {
     if (results.recommendations.length === 0) return '';
-    
-    const recommendations = results.recommendations.map(rec => {
-      const icon = rec.type === 'error' ? '🚨' : rec.type === 'warning' ? '⚠️' : 'ℹ️';
-      const command = rec.command ? `<div class="command">${rec.command}</div>` : '';
-      return `
+
+    const recommendations = results.recommendations
+      .map(rec => {
+        const icon = rec.type === 'error' ? '🚨' : rec.type === 'warning' ? '⚠️' : 'ℹ️';
+        const command = rec.command ? `<div class="command">${rec.command}</div>` : '';
+        return `
         <div class="section ${rec.type}">
             <p>${icon} ${rec.message}</p>
             ${command}
         </div>
       `;
-    }).join('');
-    
+      })
+      .join('');
+
     return `
     <div class="section">
         <h2>💡 Recommandations</h2>
         ${recommendations}
     </div>`;
   }
-  
+
   private generateHTMLMigrationPath(results: AnalysisResult): string {
     if (results.migrationPath.length === 0) return '';
-    
-    const steps = results.migrationPath.map(step => `
+
+    const steps = results.migrationPath
+      .map(
+        step => `
         <div class="section">
             <h3>Étape ${step.order}: ${step.description}</h3>
             <p><strong>Commandes:</strong></p>
             ${step.commands.map(cmd => `<div class="command">${cmd}</div>`).join('')}
             ${step.validation ? `<p><strong>Validation:</strong> <code>${step.validation}</code></p>` : ''}
         </div>
-    `).join('');
-    
+    `
+      )
+      .join('');
+
     return `
     <div class="section">
         <h2>🗺️ Plan de Migration</h2>

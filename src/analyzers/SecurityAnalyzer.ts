@@ -1,13 +1,21 @@
-import type { AnalysisResult, Recommendation, SecurityVulnerability, DeprecatedPackage, LicenseInfo } from '../types';
+import type {
+  AnalysisResult,
+  Recommendation,
+  SecurityVulnerability,
+  DeprecatedPackage,
+  LicenseInfo,
+} from '../types';
 
 import { BaseAnalyzer } from './BaseAnalyzer';
 
 export class SecurityAnalyzer extends BaseAnalyzer {
-  async analyze(): Promise<Partial<AnalysisResult> & {
-    vulnerabilities: SecurityVulnerability[];
-    deprecatedPackages: DeprecatedPackage[];
-    licenseIssues: LicenseInfo[];
-  }> {
+  async analyze(): Promise<
+    Partial<AnalysisResult> & {
+      vulnerabilities: SecurityVulnerability[];
+      deprecatedPackages: DeprecatedPackage[];
+      licenseIssues: LicenseInfo[];
+    }
+  > {
     const vulnerabilities: SecurityVulnerability[] = [];
     const deprecatedPackages: DeprecatedPackage[] = [];
     const licenseIssues: LicenseInfo[] = [];
@@ -39,27 +47,31 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         if (licenseInfo && !licenseInfo.compatible) {
           licenseIssues.push(licenseInfo);
         }
-
       } catch (error) {
         console.warn(`Erreur lors de l'analyse de sécurité pour ${depName}:`, error.message);
       }
     }
 
     // Générer les recommandations de sécurité
-    recommendations.push(...this.generateSecurityRecommendations(vulnerabilities, deprecatedPackages, licenseIssues));
+    recommendations.push(
+      ...this.generateSecurityRecommendations(vulnerabilities, deprecatedPackages, licenseIssues)
+    );
 
-    return { 
-      vulnerabilities, 
-      deprecatedPackages, 
-      licenseIssues, 
-      recommendations 
+    return {
+      vulnerabilities,
+      deprecatedPackages,
+      licenseIssues,
+      recommendations,
     };
   }
 
-  private async checkVulnerabilities(packageName: string, version: string): Promise<SecurityVulnerability[]> {
+  private async checkVulnerabilities(
+    packageName: string,
+    version: string
+  ): Promise<SecurityVulnerability[]> {
     try {
       const auditResults = await this.npmClient.getPackageVulnerabilities(packageName, version);
-      
+
       return auditResults.map((vuln: any) => ({
         package: packageName,
         version: version,
@@ -69,7 +81,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         references: vuln.references || [],
         patchedVersions: vuln.patched_versions || '',
         vulnerableVersions: vuln.vulnerable_versions || '',
-        cve: vuln.cves || []
+        cve: vuln.cves || [],
       }));
     } catch (error) {
       return [];
@@ -77,8 +89,8 @@ export class SecurityAnalyzer extends BaseAnalyzer {
   }
 
   private async checkDeprecation(
-    packageName: string, 
-    version: string, 
+    packageName: string,
+    version: string,
     packageInfo: any
   ): Promise<DeprecatedPackage | null> {
     try {
@@ -91,7 +103,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
           version: version,
           deprecationMessage: versionInfo.deprecated,
           alternatives: this.suggestAlternatives(packageName),
-          lastUpdate: packageInfo.time[version] || ''
+          lastUpdate: packageInfo.time[version] || '',
         };
       }
 
@@ -107,7 +119,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
           version: version,
           deprecationMessage: `Package non maintenu depuis ${lastUpdate.toLocaleDateString()}`,
           alternatives: this.suggestAlternatives(packageName),
-          lastUpdate: lastUpdate.toISOString()
+          lastUpdate: lastUpdate.toISOString(),
         };
       }
 
@@ -118,8 +130,8 @@ export class SecurityAnalyzer extends BaseAnalyzer {
   }
 
   private async checkLicense(
-    packageName: string, 
-    version: string, 
+    packageName: string,
+    version: string,
     _packageInfo: any
   ): Promise<LicenseInfo | null> {
     try {
@@ -135,7 +147,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         version: version,
         license: license,
         compatible: compatible,
-        concerns: concerns.length > 0 ? concerns : undefined
+        concerns: concerns.length > 0 ? concerns : undefined,
       };
     } catch (error) {
       return null;
@@ -144,44 +156,49 @@ export class SecurityAnalyzer extends BaseAnalyzer {
 
   private isLicenseCompatible(license: string): boolean {
     const compatibleLicenses = [
-      'MIT', 'ISC', 'BSD', 'BSD-2-Clause', 'BSD-3-Clause',
-      'Apache-2.0', 'Apache 2.0', 'Unlicense', 'CC0-1.0'
+      'MIT',
+      'ISC',
+      'BSD',
+      'BSD-2-Clause',
+      'BSD-3-Clause',
+      'Apache-2.0',
+      'Apache 2.0',
+      'Unlicense',
+      'CC0-1.0',
     ];
-    
-    return compatibleLicenses.some(compat => 
-      license.toUpperCase().includes(compat.toUpperCase())
-    );
+
+    return compatibleLicenses.some(compat => license.toUpperCase().includes(compat.toUpperCase()));
   }
 
   private getLicenseConcerns(license: string): string[] {
     const concerns: string[] = [];
-    
+
     if (license.toUpperCase().includes('GPL')) {
       concerns.push('Licence copyleft - peut affecter la distribution');
     }
-    
+
     if (license === 'UNKNOWN' || !license) {
       concerns.push('Licence inconnue - vérification manuelle requise');
     }
-    
+
     if (license.toUpperCase().includes('COMMERCIAL')) {
       concerns.push('Licence commerciale - coûts potentiels');
     }
-    
+
     return concerns;
   }
 
   private suggestAlternatives(packageName: string): string[] {
     const alternatives: Record<string, string[]> = {
-      'request': ['axios', 'node-fetch', 'got'],
-      'moment': ['date-fns', 'dayjs', 'luxon'],
-      'lodash': ['ramda', 'utils natives ES6+'],
+      request: ['axios', 'node-fetch', 'got'],
+      moment: ['date-fns', 'dayjs', 'luxon'],
+      lodash: ['ramda', 'utils natives ES6+'],
       'babel-polyfill': ['core-js', '@babel/preset-env'],
       'node-sass': ['sass', 'dart-sass'],
-      'tslint': ['eslint + @typescript-eslint'],
-      'protractor': ['cypress', 'playwright', 'webdriver-io']
+      tslint: ['eslint + @typescript-eslint'],
+      protractor: ['cypress', 'playwright', 'webdriver-io'],
     };
-    
+
     return alternatives[packageName] || [];
   }
 
@@ -203,7 +220,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         message: `${criticalVulns.length} vulnérabilité(s) critique(s) détectée(s)`,
         action: 'Mettre à jour immédiatement les packages vulnérables',
         command: 'npm audit fix --force',
-        priority: 'high'
+        priority: 'high',
       });
     }
 
@@ -214,7 +231,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         message: `${highVulns.length} vulnérabilité(s) de sévérité élevée`,
         action: 'Planifier la mise à jour des packages',
         command: 'npm audit fix',
-        priority: 'high'
+        priority: 'high',
       });
     }
 
@@ -226,8 +243,10 @@ export class SecurityAnalyzer extends BaseAnalyzer {
           category: 'security',
           message: `${pkg.name} est déprécié: ${pkg.deprecationMessage}`,
           package: pkg.name,
-          action: pkg.alternatives ? `Remplacer par: ${pkg.alternatives.join(' ou ')}` : 'Chercher une alternative',
-          priority: 'medium'
+          action: pkg.alternatives
+            ? `Remplacer par: ${pkg.alternatives.join(' ou ')}`
+            : 'Chercher une alternative',
+          priority: 'medium',
         });
       });
     }
@@ -239,7 +258,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
         category: 'security',
         message: `${licenseIssues.length} package(s) avec des problèmes de licence`,
         action: 'Vérifier la compatibilité légale',
-        priority: 'low'
+        priority: 'low',
       });
     }
 

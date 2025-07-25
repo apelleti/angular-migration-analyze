@@ -10,14 +10,14 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
     const allDeps = this.getAllDependencies();
 
     console.log('🔍 Analyse des peer dependencies via npm registry...');
-    
+
     // Récupérer les infos de tous les packages en parallèle
     const packageInfos = await this.npmClient.getBulkPackageInfo(Object.keys(allDeps));
 
     // Process all packages in parallel with limited concurrency
     const pLimit = (await import('p-limit')).default;
     const limit = pLimit(5);
-    
+
     const analysisPromises = Object.entries(allDeps).map(([depName, depVersion]) =>
       limit(async () => {
         const packageInfo = packageInfos[depName];
@@ -33,7 +33,7 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
           // Analyser chaque peer dependency
           for (const [peerName, peerVersion] of Object.entries(versionInfo.peerDependencies)) {
             const isOptional = versionInfo.peerDependenciesMeta?.[peerName]?.optional || false;
-            
+
             // Vérifier si la peer dependency est satisfaite
             if (!this.isPeerDependencySatisfied(peerName, peerVersion, allDeps)) {
               peerDeps.push({
@@ -41,11 +41,11 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
                 requiredBy: depName,
                 requiredVersion: peerVersion,
                 optional: isOptional,
-                severity: isOptional ? 'warning' : 'error'
+                severity: isOptional ? 'warning' : 'error',
               });
             }
           }
-          
+
           return peerDeps;
         } catch (error) {
           console.warn(`Erreur lors de l'analyse de ${depName}:`, error.message);
@@ -62,8 +62,8 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
   }
 
   private isPeerDependencySatisfied(
-    peerName: string, 
-    requiredVersion: string, 
+    peerName: string,
+    requiredVersion: string,
     installedDeps: Record<string, string>
   ): boolean {
     const installedVersion = installedDeps[peerName];

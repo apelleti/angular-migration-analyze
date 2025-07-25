@@ -9,26 +9,31 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult>> {
     const incompatibleVersions: IncompatibleVersion[] = [];
     const conflicts: DependencyConflict[] = [];
-    
+
     console.log('🔍 Analyse des compatibilités de versions via npm registry...');
-    
+
     const allDeps = this.getAllDependencies();
     // const packageInfos = await this.npmClient.getBulkPackageInfo(Object.keys(allDeps));
-    
+
     // Créer une map des exigences de versions
-    const versionRequirements = new Map<string, Array<{
-      version: string;
-      requiredBy: string;
-      source: 'direct' | 'dependency' | 'peerDependency';
-    }>>();
+    const versionRequirements = new Map<
+      string,
+      Array<{
+        version: string;
+        requiredBy: string;
+        source: 'direct' | 'dependency' | 'peerDependency';
+      }>
+    >();
 
     // Analyser les dépendances directes
     for (const [depName, depVersion] of Object.entries(allDeps)) {
-      versionRequirements.set(depName, [{
-        version: depVersion,
-        requiredBy: 'package.json',
-        source: 'direct'
-      }]);
+      versionRequirements.set(depName, [
+        {
+          version: depVersion,
+          requiredBy: 'package.json',
+          source: 'direct',
+        },
+      ]);
 
       await this.collectTransitiveDependencies(depName, depVersion, versionRequirements);
     }
@@ -48,7 +53,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
           const resolved = this.resolveVersionRange(req.version, packageInfo);
           if (resolved) {
             resolvedVersions.add(resolved);
-            
+
             if (!versionGroups.has(resolved)) {
               versionGroups.set(resolved, []);
             }
@@ -65,9 +70,9 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
           package: packageName,
           versions: Array.from(versionGroups.entries()).map(([version, requiredBy]) => ({
             version,
-            requiredBy
+            requiredBy,
           })),
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -78,7 +83,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
   private async collectTransitiveDependencies(
     packageName: string,
     version: string,
-    versionRequirements: Map<string, Array<{version: string; requiredBy: string; source: string}>>
+    versionRequirements: Map<string, Array<{ version: string; requiredBy: string; source: string }>>
   ): Promise<void> {
     try {
       const versionInfo = await this.npmClient.getPackageVersion(packageName, version);
@@ -90,11 +95,11 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
           if (!versionRequirements.has(depName)) {
             versionRequirements.set(depName, []);
           }
-          
+
           versionRequirements.get(depName).push({
             version: depVersion,
             requiredBy: packageName,
-            source: 'dependency'
+            source: 'dependency',
           });
         }
       }
@@ -105,22 +110,24 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
           if (!versionRequirements.has(peerName)) {
             versionRequirements.set(peerName, []);
           }
-          
+
           versionRequirements.get(peerName).push({
             version: peerVersion,
             requiredBy: packageName,
-            source: 'peerDependency'
+            source: 'peerDependency',
           });
         }
       }
     } catch (error) {
-      console.warn(`Impossible d'analyser les dépendances transitives de ${packageName}@${version}`);
+      console.warn(
+        `Impossible d'analyser les dépendances transitives de ${packageName}@${version}`
+      );
     }
   }
 
   private resolveVersionRange(range: string, packageInfo: NpmPackageInfo): string | null {
     const versions = Object.keys(packageInfo.versions).sort((a, b) => semver.rcompare(a, b));
-    
+
     try {
       return versions.find(v => semver.satisfies(v, range)) || null;
     } catch (error) {

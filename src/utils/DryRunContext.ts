@@ -38,23 +38,27 @@ export class DryRunContext {
   private logCommand(cmd: DryRunCommand): void {
     const icon = cmd.wouldExecute ? '✅' : '🚫';
     const color = cmd.wouldExecute ? chalk.green : chalk.red;
-    
+
     console.log(`\n${icon} ${color(cmd.description)}`);
     console.log(chalk.gray(`   Commande: ${cmd.command}`));
-    
+
     if (!cmd.wouldExecute && cmd.reason) {
       console.log(chalk.yellow(`   Raison: ${cmd.reason}`));
     }
-    
+
     console.log(chalk.gray(`   Impact: ${this.getImpactIcon(cmd.impact)} ${cmd.impact}`));
   }
 
   private getImpactIcon(impact: string): string {
     switch (impact) {
-      case 'high': return '🔴';
-      case 'medium': return '🟡';
-      case 'low': return '🟢';
-      default: return '⚪';
+      case 'high':
+        return '🔴';
+      case 'medium':
+        return '🟡';
+      case 'low':
+        return '🟢';
+      default:
+        return '⚪';
     }
   }
 
@@ -64,7 +68,7 @@ export class DryRunContext {
       // In dry-run mode, don't execute the actual command
       return Promise.resolve({ dryRun: true, command: commandInfo });
     }
-    
+
     // In normal mode, execute the command
     return commandFn();
   }
@@ -72,7 +76,7 @@ export class DryRunContext {
   generateReport(): DryRunReport {
     const wouldExecute = this.commands.filter(cmd => cmd.wouldExecute).length;
     const blocked = this.commands.filter(cmd => !cmd.wouldExecute).length;
-    
+
     const risks = this.identifyRisks();
     const recommendations = this.generateRecommendations();
     const estimatedDuration = this.calculateEstimatedDuration();
@@ -84,27 +88,27 @@ export class DryRunContext {
       blocked,
       estimatedDuration,
       risks,
-      recommendations
+      recommendations,
     };
   }
 
   private identifyRisks(): string[] {
     const risks: string[] = [];
-    
+
     const highImpactCommands = this.commands.filter(cmd => cmd.impact === 'high');
     if (highImpactCommands.length > 0) {
       risks.push(`${highImpactCommands.length} commandes à fort impact détectées`);
     }
 
-    const angularUpdates = this.commands.filter(cmd => 
-      cmd.category === 'angular' && cmd.command.includes('ng update')
+    const angularUpdates = this.commands.filter(
+      cmd => cmd.category === 'angular' && cmd.command.includes('ng update')
     );
     if (angularUpdates.length > 0) {
       risks.push('Mise à jour Angular majeure nécessaire - vérifiez les breaking changes');
     }
 
-    const securityFixes = this.commands.filter(cmd => 
-      cmd.category === 'security' && cmd.command.includes('audit fix')
+    const securityFixes = this.commands.filter(
+      cmd => cmd.category === 'security' && cmd.command.includes('audit fix')
     );
     if (securityFixes.length > 0) {
       risks.push('Corrections de sécurité critiques à appliquer');
@@ -115,14 +119,16 @@ export class DryRunContext {
 
   private generateRecommendations(): string[] {
     const recommendations: string[] = [];
-    
+
     if (this.commands.length > 10) {
       recommendations.push('Exécutez les commandes par batch pour éviter les problèmes');
     }
 
     const blockedCommands = this.commands.filter(cmd => !cmd.wouldExecute);
     if (blockedCommands.length > 0) {
-      recommendations.push(`Résolvez les ${blockedCommands.length} commandes bloquées avant de continuer`);
+      recommendations.push(
+        `Résolvez les ${blockedCommands.length} commandes bloquées avant de continuer`
+      );
     }
 
     const hasAngularUpdate = this.commands.some(cmd => cmd.command.includes('ng update'));
@@ -136,7 +142,7 @@ export class DryRunContext {
 
   private calculateEstimatedDuration(): string {
     let totalMinutes = 0;
-    
+
     this.commands.forEach(cmd => {
       if (cmd.command.includes('ng update')) totalMinutes += 7;
       else if (cmd.command.includes('npm install')) totalMinutes += 2;
@@ -159,23 +165,25 @@ export class DryRunContext {
     if (!this.isDryRun || this.commands.length === 0) return;
 
     const report = this.generateReport();
-    
+
     console.log(chalk.blue.bold('\n📋 RÉSUMÉ DU MODE DRY-RUN\n'));
-    
+
     const summaryData = [
       ['Métrique', 'Valeur'],
       ['Total des commandes', report.totalCommands.toString()],
       ['Seraient exécutées', chalk.green(report.wouldExecute.toString())],
       ['Bloquées', chalk.red(report.blocked.toString())],
-      ['Durée estimée', report.estimatedDuration]
+      ['Durée estimée', report.estimatedDuration],
     ];
-    
-    console.log(table(summaryData, {
-      header: {
-        alignment: 'center',
-        content: chalk.cyan('Résumé d\'exécution')
-      }
-    }));
+
+    console.log(
+      table(summaryData, {
+        header: {
+          alignment: 'center',
+          content: chalk.cyan("Résumé d'exécution"),
+        },
+      })
+    );
 
     if (report.risks.length > 0) {
       console.log(chalk.yellow.bold('\n⚠️  RISQUES IDENTIFIÉS:'));
@@ -191,7 +199,7 @@ export class DryRunContext {
       });
     }
 
-    console.log(chalk.gray('\n💭 Aucune modification n\'a été effectuée (mode dry-run)'));
+    console.log(chalk.gray("\n💭 Aucune modification n'a été effectuée (mode dry-run)"));
   }
 
   reset(): void {

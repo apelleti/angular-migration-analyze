@@ -27,7 +27,7 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error(chalk.red('Uncaught Exception:'), error);
   process.exit(1);
 });
@@ -42,10 +42,10 @@ program
   .option('--no-cache', 'Désactiver le cache')
   .option('--dry-run', 'Mode simulation - aucune modification')
   .option('--verbose', 'Mode verbeux')
-  .action(async (options) => {
+  .action(async options => {
     let spinner: any;
     const dryRunContext = new DryRunContext(options.dryRun);
-    
+
     try {
       // Validate inputs
       if (!SecurityUtils.validateFilePath(options.path)) {
@@ -58,13 +58,13 @@ program
 
       // Load configuration
       const config = ConfigurationManager.loadConfiguration(options.path);
-      
+
       if (options.noCache) {
         config.cache.enabled = false;
       }
 
       // Progress tracking
-      spinner = ora('Initialisation de l\'analyse...').start();
+      spinner = ora("Initialisation de l'analyse...").start();
 
       const progressCallback = (progress: AnalysisProgress) => {
         if (options.verbose) {
@@ -73,14 +73,14 @@ program
       };
 
       const analyzer = new MigrationAnalyzer(options.path, config, progressCallback);
-      
+
       spinner.text = 'Analyse en cours...';
       const results = await analyzer.analyze();
-      
+
       spinner.succeed(`Analyse terminée (${results.metadata.duration}ms)`);
-      
+
       const reporter = new ReportGenerator();
-      
+
       switch (options.format) {
         case 'json':
           if (options.output) {
@@ -90,37 +90,36 @@ program
             console.log(JSON.stringify(results, null, 2));
           }
           break;
-          
+
         case 'html':
           const htmlFile = options.output || 'migration-report.html';
           await reporter.generateHTML(results, htmlFile);
           console.log(chalk.green(`Rapport HTML généré: ${htmlFile}`));
           break;
-          
+
         default:
           displayTableReport(results);
       }
-      
+
       // Display summary
       displaySummary(results);
-      
+
       if (options.fix && results.recommendations.length > 0) {
         await handleFixSuggestions(results, dryRunContext);
       }
-      
+
       // Display dry-run summary if applicable
       if (options.dryRun) {
         dryRunContext.displaySummary();
       }
-      
+
       // Exit with appropriate code
       process.exit(results.summary.criticalIssues > 0 ? 1 : 0);
-      
     } catch (error) {
       if (spinner) {
-        spinner.fail('Erreur lors de l\'analyse');
+        spinner.fail("Erreur lors de l'analyse");
       }
-      
+
       if (error instanceof ValidationError) {
         console.error(chalk.red(`Erreur de validation: ${error.message}`));
       } else {
@@ -140,30 +139,30 @@ program
   .option('--fail-on-critical', 'Échec si problèmes critiques détectés')
   .option('--dry-run', 'Mode simulation - aucune modification')
   .option('--verbose', 'Mode verbeux')
-  .action(async (options) => {
+  .action(async options => {
     let spinner: any;
-    
+
     try {
       if (!SecurityUtils.validateFilePath(options.path)) {
         throw new ValidationError('Invalid project path');
       }
 
       const config = ConfigurationManager.loadConfiguration(options.path);
-      
+
       spinner = ora('Diagnostic en cours...').start();
-      
+
       const analyzer = new MigrationAnalyzer(options.path, config);
       const results = await analyzer.analyze();
-      
+
       spinner.succeed('Diagnostic terminé');
-      
+
       // Affichage du diagnostic
       console.log(chalk.blue.bold('\n📊 DIAGNOSTIC DU PROJET\n'));
-      
+
       displayHealthScore(results);
       displayIssuesSummary(results);
       displayRecommendations(results);
-      
+
       // Check critical issues
       if (options.failOnCritical && results.summary.criticalIssues > 0) {
         console.log(chalk.red('\n❌ Problèmes critiques détectés - échec du diagnostic'));
@@ -172,7 +171,6 @@ program
         console.log(chalk.green('\n✅ Aucun problème critique - projet prêt'));
         process.exit(0);
       }
-      
     } catch (error) {
       if (spinner) {
         spinner.fail('Erreur lors du diagnostic');
@@ -193,9 +191,9 @@ program
   .option('-o, --output <file>', 'Fichier de sortie pour le script')
   .option('--dry-run', 'Mode simulation - affiche ce qui serait exécuté')
   .option('--verbose', 'Mode verbeux')
-  .action(async (options) => {
+  .action(async options => {
     const dryRunContext = new DryRunContext(options.dryRun);
-    
+
     try {
       if (!SecurityUtils.validateFilePath(options.path)) {
         throw new ValidationError('Invalid project path');
@@ -204,10 +202,10 @@ program
       const config = ConfigurationManager.loadConfiguration(options.path);
       const analyzer = new MigrationAnalyzer(options.path, config);
       const results = await analyzer.analyze();
-      
+
       const commandGen = new CommandGenerator();
       const commands = commandGen.generateFixCommands(results);
-      
+
       if (commands.length === 0) {
         console.log(chalk.blue('✅ Aucune correction nécessaire - projet en bonne santé !'));
         return;
@@ -221,10 +219,10 @@ program
             description: commandGen.getCommandDescription(cmd),
             impact: cmd.includes('--force') ? 'high' : 'medium',
             category: commandGen.getCommandCategory(cmd),
-            wouldExecute: true
+            wouldExecute: true,
           });
         });
-        
+
         dryRunContext.displaySummary();
         return;
       }
@@ -237,14 +235,14 @@ program
               order: index + 1,
               command: cmd,
               description: commandGen.getCommandDescription(cmd),
-              category: commandGen.getCommandCategory(cmd)
+              category: commandGen.getCommandCategory(cmd),
             })),
             summary: {
               totalCommands: commands.length,
-              estimatedDuration: commandGen.estimateDuration(commands)
-            }
+              estimatedDuration: commandGen.estimateDuration(commands),
+            },
           };
-          
+
           if (options.output) {
             await fs.promises.writeFile(options.output, JSON.stringify(jsonOutput, null, 2));
             console.log(chalk.green(`Commandes sauvegardées: ${options.output}`));
@@ -252,7 +250,7 @@ program
             console.log(JSON.stringify(jsonOutput, null, 2));
           }
           break;
-          
+
         case 'script':
           const script = commandGen.generateExecutableScript(commands, results);
           const scriptFile = options.output || 'fix-dependencies.sh';
@@ -260,11 +258,10 @@ program
           console.log(chalk.green(`📝 Script généré: ${scriptFile}`));
           console.log(chalk.blue('Pour exécuter: chmod +x ' + scriptFile + ' && ./' + scriptFile));
           break;
-          
+
         default:
           displayFixCommands(commands, commandGen);
       }
-      
     } catch (error) {
       console.error(chalk.red(`Erreur: ${error.message}`));
       process.exit(1);
@@ -275,7 +272,7 @@ program
   .command('init')
   .description('Initialise la configuration du projet')
   .option('-p, --path <path>', 'Chemin du projet', process.cwd())
-  .action(async (options) => {
+  .action(async options => {
     try {
       ConfigurationManager.generateDefaultConfigFile(options.path);
       console.log(chalk.green('✅ Configuration initialisée avec succès'));
@@ -288,7 +285,7 @@ program
 // Helper functions
 function displayTableReport(results: any): void {
   console.log(chalk.blue.bold('\n📦 ANALYSE DES DÉPENDANCES\n'));
-  
+
   // Peer Dependencies manquantes
   if (results.missingPeerDeps.length > 0) {
     console.log(chalk.red.bold('❌ Peer Dependencies manquantes:'));
@@ -298,12 +295,12 @@ function displayTableReport(results: any): void {
         dep.package,
         dep.requiredBy,
         dep.requiredVersion,
-        dep.severity === 'error' ? '🚨 Critique' : '⚠️ Optionnel'
-      ])
+        dep.severity === 'error' ? '🚨 Critique' : '⚠️ Optionnel',
+      ]),
     ];
     console.log(table(peerData));
   }
-  
+
   // Conflits de versions
   if (results.conflicts.length > 0) {
     console.log(chalk.yellow.bold('\n⚠️  Conflits de versions:'));
@@ -317,7 +314,7 @@ function displayTableReport(results: any): void {
       }
     });
   }
-  
+
   // Packages Angular
   if (results.angularPackages.length > 0) {
     console.log(chalk.green.bold('\n🅰️  Packages Angular:'));
@@ -328,8 +325,8 @@ function displayTableReport(results: any): void {
         pkg.currentVersion,
         pkg.targetVersion,
         pkg.migrationComplexity || 'unknown',
-        pkg.currentVersion === pkg.targetVersion ? '✅' : '🔄'
-      ])
+        pkg.currentVersion === pkg.targetVersion ? '✅' : '🔄',
+      ]),
     ];
     console.log(table(angularData));
   }
@@ -337,13 +334,12 @@ function displayTableReport(results: any): void {
 
 function displaySummary(results: any): void {
   console.log(chalk.blue.bold('\n📊 RÉSUMÉ\n'));
-  
+
   const summary = results.summary;
-  const healthColor = summary.healthScore >= 80 ? chalk.green : 
-                     summary.healthScore >= 60 ? chalk.yellow : chalk.red;
-  const healthEmoji = summary.healthScore >= 80 ? '🟢' : 
-                     summary.healthScore >= 60 ? '🟡' : '🔴';
-  
+  const healthColor =
+    summary.healthScore >= 80 ? chalk.green : summary.healthScore >= 60 ? chalk.yellow : chalk.red;
+  const healthEmoji = summary.healthScore >= 80 ? '🟢' : summary.healthScore >= 60 ? '🟡' : '🔴';
+
   console.log(`${healthEmoji} Score de santé: ${healthColor.bold(summary.healthScore)}/100`);
   console.log(`🚨 Problèmes critiques: ${summary.criticalIssues}`);
   console.log(`⚠️  Avertissements: ${summary.warnings}`);
@@ -357,13 +353,13 @@ function displayHealthScore(results: any): void {
   const score = results.summary.healthScore;
   const color = score >= 80 ? chalk.green : score >= 60 ? chalk.yellow : chalk.red;
   const emoji = score >= 80 ? '🟢' : score >= 60 ? '🟡' : '🔴';
-  
+
   console.log(`${emoji} Score de santé: ${color.bold(score)}/100`);
 }
 
 function displayIssuesSummary(results: any): void {
   const summary = results.summary;
-  
+
   console.log(`\n📊 Résumé:`);
   console.log(`   ${chalk.red('Problèmes critiques:')} ${summary.criticalIssues}`);
   console.log(`   ${chalk.yellow('Avertissements:')} ${summary.warnings}`);
@@ -373,16 +369,16 @@ function displayIssuesSummary(results: any): void {
 function displayRecommendations(results: any): void {
   if (results.recommendations.length > 0) {
     console.log(chalk.blue.bold('\n💡 RECOMMANDATIONS\n'));
-    
+
     // Group by priority
     const highPriority = results.recommendations.filter((r: any) => r.priority === 'high');
     const mediumPriority = results.recommendations.filter((r: any) => r.priority === 'medium');
     const lowPriority = results.recommendations.filter((r: any) => r.priority === 'low');
-    
+
     [
       { title: '🚨 Priorité élevée', items: highPriority },
       { title: '⚠️ Priorité moyenne', items: mediumPriority },
-      { title: 'ℹ️ Priorité faible', items: lowPriority }
+      { title: 'ℹ️ Priorité faible', items: lowPriority },
     ].forEach(group => {
       if (group.items.length > 0) {
         console.log(chalk.bold(group.title));
@@ -403,25 +399,25 @@ function displayRecommendations(results: any): void {
 
 function displayFixCommands(commands: string[], commandGen: CommandGenerator): void {
   console.log(chalk.blue.bold('\n🔧 COMMANDES DE CORRECTION\n'));
-  
+
   commands.forEach((cmd, index) => {
     console.log(chalk.green(`${index + 1}. ${commandGen.getCommandDescription(cmd)}`));
     console.log(chalk.gray(`   ${cmd}`));
     console.log(chalk.gray(`   Durée estimée: ${commandGen.estimateCommandTime(cmd)}`));
     console.log('');
   });
-  
+
   console.log(chalk.yellow(`⏱️  Durée totale estimée: ${commandGen.estimateDuration(commands)}`));
 }
 
 async function handleFixSuggestions(results: any, dryRunContext?: DryRunContext): Promise<void> {
   const fixes = results.recommendations.filter((rec: any) => rec.command);
-  
+
   if (fixes.length === 0) {
     console.log(chalk.blue('Aucune correction automatique disponible'));
     return;
   }
-  
+
   console.log(chalk.blue('\n🔧 Corrections suggérées:'));
   fixes.forEach((fix: any, i: number) => {
     console.log(`${i + 1}. ${fix.message}`);
@@ -430,32 +426,36 @@ async function handleFixSuggestions(results: any, dryRunContext?: DryRunContext)
       console.log(chalk.gray(`   Effort: ${fix.estimatedEffort}`));
     }
   });
-  
-  const { selectedFixes } = await inquirer.prompt([{
-    type: 'checkbox',
-    name: 'selectedFixes',
-    message: 'Sélectionnez les corrections à appliquer:',
-    choices: fixes.map((fix: any, i: number) => ({
-      name: `${fix.message} ${fix.estimatedEffort ? `(${fix.estimatedEffort})` : ''}`,
-      value: i,
-      checked: fix.priority === 'high'
-    }))
-  }]);
-  
+
+  const { selectedFixes } = await inquirer.prompt([
+    {
+      type: 'checkbox',
+      name: 'selectedFixes',
+      message: 'Sélectionnez les corrections à appliquer:',
+      choices: fixes.map((fix: any, i: number) => ({
+        name: `${fix.message} ${fix.estimatedEffort ? `(${fix.estimatedEffort})` : ''}`,
+        value: i,
+        checked: fix.priority === 'high',
+      })),
+    },
+  ]);
+
   if (selectedFixes.length > 0) {
     const commandGen = new CommandGenerator();
     const commands = selectedFixes.map((i: number) => fixes[i].command);
-    
+
     // Sanitize commands
-    const sanitizedCommands = commands.map((cmd: string) => {
-      try {
-        return SecurityUtils.sanitizeCommand(cmd);
-      } catch (error) {
-        console.warn(chalk.yellow(`Commande ignorée: ${cmd}`));
-        return null;
-      }
-    }).filter(Boolean) as string[];
-    
+    const sanitizedCommands = commands
+      .map((cmd: string) => {
+        try {
+          return SecurityUtils.sanitizeCommand(cmd);
+        } catch (error) {
+          console.warn(chalk.yellow(`Commande ignorée: ${cmd}`));
+          return null;
+        }
+      })
+      .filter(Boolean) as string[];
+
     if (dryRunContext?.isDryRunMode()) {
       // En mode dry-run, enregistrer les commandes sans les exécuter
       sanitizedCommands.forEach(cmd => {
@@ -464,7 +464,7 @@ async function handleFixSuggestions(results: any, dryRunContext?: DryRunContext)
           description: commandGen.getCommandDescription(cmd),
           impact: 'medium',
           category: commandGen.getCommandCategory(cmd),
-          wouldExecute: true
+          wouldExecute: true,
         });
       });
     } else {

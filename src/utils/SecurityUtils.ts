@@ -2,21 +2,13 @@ import * as path from 'path';
 
 export class SecurityUtils {
   private static readonly DANGEROUS_PATTERNS = [
-    /\.\./g,  // Path traversal
-    /[;&|`$]/g,  // Command injection
-    /[<>]/g,  // Redirection
-    /[\n\r]/g,  // Line breaks
+    /\.\./g, // Path traversal
+    /[;&|`$]/g, // Command injection
+    /[<>]/g, // Redirection
+    /[\n\r]/g, // Line breaks
   ];
 
-  private static readonly ALLOWED_COMMANDS = [
-    'npm',
-    'ng',
-    'git',
-    'node',
-    'npx',
-    'pnpm',
-    'yarn'
-  ];
+  private static readonly ALLOWED_COMMANDS = ['npm', 'ng', 'git', 'node', 'npx', 'pnpm', 'yarn'];
 
   /**
    * Validate a file path to prevent directory traversal attacks
@@ -102,7 +94,7 @@ export class SecurityUtils {
 
     // npm package name rules
     const validPackageNameRegex = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
-    
+
     return validPackageNameRegex.test(packageName);
   }
 
@@ -129,7 +121,7 @@ export class SecurityUtils {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
     const safeName = `${prefix}-${timestamp}-${random}`;
-    
+
     return path.join(process.cwd(), '.tmp', safeName);
   }
 
@@ -139,7 +131,7 @@ export class SecurityUtils {
   static validateUrl(url: string): boolean {
     try {
       const parsed = new URL(url);
-      
+
       // Only allow http and https protocols
       if (!['http:', 'https:'].includes(parsed.protocol)) {
         return false;
@@ -147,11 +139,13 @@ export class SecurityUtils {
 
       // Check for localhost and private IPs
       const hostname = parsed.hostname.toLowerCase();
-      if (hostname === 'localhost' || 
-          hostname === '127.0.0.1' ||
-          hostname.startsWith('192.168.') ||
-          hostname.startsWith('10.') ||
-          hostname.startsWith('172.')) {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.')
+      ) {
         return false;
       }
 
