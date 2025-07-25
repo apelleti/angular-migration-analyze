@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { AnalyzerConfig, AnalyzerConfigSchema } from '../types';
+
+import type { AnalyzerConfig} from '../types';
+import { AnalyzerConfigSchema } from '../types';
 
 export class ConfigurationManager {
   private static readonly CONFIG_FILE_NAME = '.ng-migrate.json';
@@ -83,7 +85,14 @@ export class ConfigurationManager {
 
     // Cache settings from environment
     if (process.env.NG_MIGRATE_CACHE === 'false') {
-      envConfig.cache = { ...envConfig.cache, enabled: false };
+      envConfig.cache = { 
+        ...envConfig.cache, 
+        enabled: false,
+        ttl: 300000,
+        maxSize: 100,
+        persistToDisk: false,
+        diskCachePath: '.cache'
+      };
     }
 
     // Proxy settings from environment

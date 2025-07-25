@@ -1,8 +1,11 @@
-import https from 'https';
 import http from 'http';
-import * as semver from 'semver';
+import https from 'https';
+
 import pLimit from 'p-limit';
-import { NetworkError, AnalyzerConfig, ValidationError, ParseError } from '../types';
+import * as semver from 'semver';
+
+import type { AnalyzerConfig} from '../types';
+import { NetworkError, ValidationError, ParseError } from '../types';
 
 export interface NpmPackageInfo {
   name: string;
@@ -266,7 +269,7 @@ export class NpmRegistryClient {
       }
     }
     
-    throw lastError!;
+    throw lastError;
   }
 
   private async makeRequest(packageName: string): Promise<NpmPackageInfo> {
@@ -294,7 +297,7 @@ export class NpmRegistryClient {
         options.hostname = proxy.host;
         options.port = proxy.port;
         options.path = url.href;
-        options.headers!['Host'] = url.hostname;
+        options.headers['Host'] = url.hostname;
       }
 
       const protocol = url.protocol === 'https:' ? https : http;
@@ -314,7 +317,8 @@ export class NpmRegistryClient {
             } else if (response.statusCode === 404) {
               reject(new NetworkError(`Package ${packageName} not found`, 404));
             } else if (response.statusCode === 429) {
-              const retryAfter = parseInt(response.headers['retry-after'] as string || '60') * 1000;
+              const retryAfterHeader = response.headers['retry-after'];
+              const retryAfter = parseInt(typeof retryAfterHeader === 'string' ? retryAfterHeader : '60') * 1000;
               reject(new NetworkError('Rate limited', 429, retryAfter));
             } else {
               reject(new NetworkError(`HTTP ${response.statusCode}: ${response.statusMessage}`, response.statusCode));
@@ -423,6 +427,7 @@ export class NpmRegistryClient {
 
   private sanitizePackageName(packageName: string): string {
     // Remove any potentially dangerous characters but keep scoped packages (@scope/name)
+    // eslint-disable-next-line no-useless-escape
     return packageName.replace(/[^a-zA-Z0-9@\/\-_.]/g, '');
   }
 
@@ -507,7 +512,6 @@ export class NpmRegistryClient {
   getCacheStats(): { size: number; hitRate: number; oldestEntry: number; newestEntry: number } {
     const entries = Array.from(this.cache.values());
     const timestamps = entries.map(e => e.timestamp);
-    const totalAccess = entries.reduce((sum, e) => sum + e.accessCount, 0);
     const cacheHits = entries.filter(e => e.accessCount > 1).length;
     
     return {

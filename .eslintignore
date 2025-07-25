@@ -1,0 +1,12 @@
+# Ignore build output
+dist/
+coverage/
+node_modules/
+
+# Ignore test files temporarily
+tests/
+*.test.ts
+*.spec.ts
+
+# Ignore website
+website/

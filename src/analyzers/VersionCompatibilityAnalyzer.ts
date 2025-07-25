@@ -1,7 +1,9 @@
 import * as semver from 'semver';
+
+import type { AnalysisResult, IncompatibleVersion, DependencyConflict } from '../types';
+import type { NpmPackageInfo } from '../utils/NpmRegistryClient';
+
 import { BaseAnalyzer } from './BaseAnalyzer';
-import { AnalysisResult, IncompatibleVersion, DependencyConflict } from '../types';
-import { NpmPackageInfo } from '../utils/NpmRegistryClient';
 
 export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult>> {
@@ -11,7 +13,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
     console.log('🔍 Analyse des compatibilités de versions via npm registry...');
     
     const allDeps = this.getAllDependencies();
-    const packageInfos = await this.npmClient.getBulkPackageInfo(Object.keys(allDeps));
+    // const packageInfos = await this.npmClient.getBulkPackageInfo(Object.keys(allDeps));
     
     // Créer une map des exigences de versions
     const versionRequirements = new Map<string, Array<{
@@ -50,7 +52,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
             if (!versionGroups.has(resolved)) {
               versionGroups.set(resolved, []);
             }
-            versionGroups.get(resolved)!.push(req.requiredBy);
+            versionGroups.get(resolved).push(req.requiredBy);
           }
         } catch (error) {
           console.warn(`Erreur lors de la résolution de ${packageName}@${req.version}`);
@@ -89,7 +91,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
             versionRequirements.set(depName, []);
           }
           
-          versionRequirements.get(depName)!.push({
+          versionRequirements.get(depName).push({
             version: depVersion,
             requiredBy: packageName,
             source: 'dependency'
@@ -104,7 +106,7 @@ export class VersionCompatibilityAnalyzer extends BaseAnalyzer {
             versionRequirements.set(peerName, []);
           }
           
-          versionRequirements.get(peerName)!.push({
+          versionRequirements.get(peerName).push({
             version: peerVersion,
             requiredBy: packageName,
             source: 'peerDependency'

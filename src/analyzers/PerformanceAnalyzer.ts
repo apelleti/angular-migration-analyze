@@ -1,5 +1,6 @@
+import type { AnalysisResult, BundleAnalysis, DuplicatedDependency, OptimizationSuggestion } from '../types';
+
 import { BaseAnalyzer } from './BaseAnalyzer';
-import { AnalysisResult, BundleAnalysis, DuplicatedDependency, OptimizationSuggestion } from '../types';
 
 export class PerformanceAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult> & {
@@ -96,7 +97,7 @@ export class PerformanceAnalyzer extends BaseAnalyzer {
         if (!packageVersions.has(packageName)) {
           packageVersions.set(packageName, new Set());
         }
-        packageVersions.get(packageName)!.add((info as any).version);
+        packageVersions.get(packageName).add((info as any).version);
         
         // Récursion pour les sous-dépendances
         if ((info as any).dependencies) {

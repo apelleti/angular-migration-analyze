@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
+import type { AnalysisResult, ConfigurationIssue, ModernizationSuggestion } from '../types';
+
 import { BaseAnalyzer } from './BaseAnalyzer';
-import { AnalysisResult, ConfigurationIssue, ModernizationSuggestion } from '../types';
 
 export class ConfigurationAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult> & {
@@ -31,7 +33,7 @@ export class ConfigurationAnalyzer extends BaseAnalyzer {
           category: 'configuration' as const,
           message: issue.description,
           action: issue.solution,
-          priority: issue.severity === 'error' ? 'high' : issue.severity === 'warning' ? 'medium' : 'low' as const
+          priority: (issue.severity === 'error' ? 'high' : issue.severity === 'warning' ? 'medium' : 'low') as 'low' | 'medium' | 'high'
         })),
         ...modernizationSuggestions.map(sugg => ({
           type: 'info' as const,

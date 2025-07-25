@@ -1,6 +1,8 @@
 import * as semver from 'semver';
+
+import type { AnalysisResult, AngularPackageInfo, Recommendation, MigrationStep } from '../types';
+
 import { BaseAnalyzer } from './BaseAnalyzer';
-import { AnalysisResult, AngularPackageInfo, Recommendation, MigrationStep } from '../types';
 
 export class AngularAnalyzer extends BaseAnalyzer {
   private readonly ANGULAR_COMPATIBILITY_MATRIX = {
@@ -55,11 +57,11 @@ export class AngularAnalyzer extends BaseAnalyzer {
           };
 
           // Vérifier la compatibilité avec Node.js et TypeScript
-          const compatRecs = await this.checkCompatibility(depName, currentVersion, []);
+          const compatRecs = await this.checkCompatibility(depName, currentVersion);
           
           return { packageData, recommendations: compatRecs };
         } catch (error) {
-          console.warn(`Erreur lors de l'analyse de ${depName}:`, error.message);
+          console.warn(`Erreur lors de l'analyse de ${depName}:`, (error as Error).message);
           return null;
         }
       })
@@ -76,7 +78,7 @@ export class AngularAnalyzer extends BaseAnalyzer {
     });
 
     // Générer les recommandations supplémentaires
-    recommendations.push(...await this.generateAdvancedRecommendations(angularPackages, compatibilityMatrix));
+    recommendations.push(...this.generateAdvancedRecommendations(angularPackages, compatibilityMatrix));
     
     // Générer le chemin de migration
     migrationPath.push(...await this.generateDetailedMigrationPath(angularPackages));
@@ -108,12 +110,12 @@ export class AngularAnalyzer extends BaseAnalyzer {
 
   private async checkCompatibility(
     packageName: string, 
-    version: string, 
-    recommendations: Recommendation[]
-  ): Promise<void> {
+    version: string
+  ): Promise<Recommendation[]> {
+    const recommendations: Recommendation[] = [];
     try {
       const versionInfo = await this.npmClient.getPackageVersion(packageName, version);
-      if (!versionInfo) return;
+      if (!versionInfo) return recommendations;
 
       // Vérifier Node.js
       if (versionInfo.engines?.node) {
@@ -153,12 +155,13 @@ export class AngularAnalyzer extends BaseAnalyzer {
     } catch (error) {
       console.warn(`Impossible de vérifier la compatibilité pour ${packageName}@${version}`);
     }
+    return recommendations;
   }
 
-  private async generateAdvancedRecommendations(
+  private generateAdvancedRecommendations(
     packages: AngularPackageInfo[], 
-    compatibilityMatrix: Record<string, any>
-  ): Promise<Recommendation[]> {
+    compatibilityMatrix: Record<string, { node?: string; typescript?: string }>
+  ): Recommendation[] {
     const recommendations: Recommendation[] = [];
     
     // Vérifier l'alignement des versions
@@ -242,14 +245,14 @@ export class AngularAnalyzer extends BaseAnalyzer {
       });
       
       // Étapes spécifiques par version
-      const specificSteps = await this.getVersionSpecificSteps(nextVersion);
+      const specificSteps = this.getVersionSpecificSteps(nextVersion);
       steps.push(...specificSteps);
     }
 
     return steps;
   }
 
-  private async getVersionSpecificSteps(targetVersion: number): Promise<MigrationStep[]> {
+  private getVersionSpecificSteps(targetVersion: number): MigrationStep[] {
     const steps: MigrationStep[] = [];
     
     // Étapes spécifiques selon la version cible

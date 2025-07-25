@@ -1,16 +1,16 @@
-import { AnalysisResult } from '../types';
+import type { AnalysisResult } from '../types';
 
 export class CommandGenerator {
-  generateFixCommands(results: AnalysisResult & any): string[] {
+  generateFixCommands(results: any): string[] {
     const commands: string[] = [];
     
     try {
       // Install missing peer dependencies (non-optional only)
       const requiredPeerDeps = results.missingPeerDeps
-        .filter(dep => dep.severity === 'error' && !dep.optional);
+        .filter((dep: any) => dep.severity === 'error' && !dep.optional);
       
       if (requiredPeerDeps.length > 0) {
-        const packages = requiredPeerDeps.map(dep => 
+        const packages = requiredPeerDeps.map((dep: any) => 
           `${dep.package}@"${dep.requiredVersion}"`
         );
         commands.push(`npm install --save-dev ${packages.join(' ')}`);
@@ -18,10 +18,10 @@ export class CommandGenerator {
       
       // Angular-specific update commands
       const outdatedAngularPackages = results.angularPackages
-        .filter(pkg => pkg.currentVersion !== pkg.targetVersion);
+        .filter((pkg: any) => pkg.currentVersion !== pkg.targetVersion);
       
       if (outdatedAngularPackages.length > 0) {
-        const corePackage = outdatedAngularPackages.find(p => p.name === '@angular/core');
+        const corePackage = outdatedAngularPackages.find((p: any) => p.name === '@angular/core');
         if (corePackage) {
           commands.push(`ng update @angular/cli@${corePackage.targetVersion} @angular/core@${corePackage.targetVersion}`);
         }
@@ -70,11 +70,11 @@ export class CommandGenerator {
     return 'Commande de maintenance';
   }
 
-  getCommandCategory(command: string): 'security' | 'dependencies' | 'angular' | 'optimization' {
+  getCommandCategory(command: string): 'security' | 'dependencies' | 'angular' | 'configuration' {
     if (command.includes('audit')) return 'security';
     if (command.includes('ng update') || command.includes('@angular')) return 'angular';
     if (command.includes('dedupe') || command.includes('npm install')) return 'dependencies';
-    return 'optimization';
+    return 'configuration';
   }
 
   estimateCommandTime(command: string): string {
@@ -115,7 +115,7 @@ export class CommandGenerator {
     }
   }
 
-  generateExecutableScript(commands: string[], results: AnalysisResult): string {
+  generateExecutableScript(commands: string[], _results: AnalysisResult): string {
     const timestamp = new Date().toISOString();
     
     let script = '#!/bin/bash\n';
@@ -230,7 +230,7 @@ export class CommandGenerator {
     script += 'git checkout - || true\n\n';
     
     // Étapes de migration
-    migrationSteps.forEach((step, index) => {
+    migrationSteps.forEach((step) => {
       script += `# ÉTAPE ${step.order}: ${step.description}\n`;
       script += `echo -e "\${BLUE}📋 ÉTAPE ${step.order}: ${step.description}\${NC}"\n`;
       
@@ -304,7 +304,7 @@ export class CommandGenerator {
     return prerequisites;
   }
 
-  generatePostMigrationSteps(results: AnalysisResult): string[] {
+  generatePostMigrationSteps(_results: AnalysisResult): string[] {
     return [
       'Exécuter npm run build pour vérifier la compilation',
       'Lancer npm run test pour valider les tests',

@@ -1,5 +1,6 @@
+import type { AnalysisResult, Recommendation, SecurityVulnerability, DeprecatedPackage, LicenseInfo } from '../types';
+
 import { BaseAnalyzer } from './BaseAnalyzer';
-import { AnalysisResult, Recommendation, SecurityVulnerability, DeprecatedPackage, LicenseInfo } from '../types';
 
 export class SecurityAnalyzer extends BaseAnalyzer {
   async analyze(): Promise<Partial<AnalysisResult> & {
@@ -119,7 +120,7 @@ export class SecurityAnalyzer extends BaseAnalyzer {
   private async checkLicense(
     packageName: string, 
     version: string, 
-    packageInfo: any
+    _packageInfo: any
   ): Promise<LicenseInfo | null> {
     try {
       const versionInfo = await this.npmClient.getPackageVersion(packageName, version);

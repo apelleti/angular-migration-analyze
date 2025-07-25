@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
 import * as semver from 'semver';
 import * as yaml from 'yaml';
-import { NpmRegistryClient } from '../utils/NpmRegistryClient';
-import { 
+
+import type { 
   PackageInfo, 
   NpmLockFile, 
   PnpmLockFile, 
@@ -11,10 +12,13 @@ import {
   AnalyzerConfig,
   AnalysisSummary,
   AnalysisMetadata,
-  ParseError,
-  ValidationError,
   AnalysisProgress
 } from '../types';
+import {
+  ParseError,
+  ValidationError
+} from '../types';
+import { NpmRegistryClient } from '../utils/NpmRegistryClient';
 
 export abstract class BaseAnalyzer {
   protected packageJson: PackageInfo;
@@ -40,7 +44,7 @@ export abstract class BaseAnalyzer {
       this.lockFile = this.loadLockFile();
       this.packageManager = this.detectPackageManager();
     } catch (error) {
-      throw new ValidationError(`Failed to initialize analyzer: ${error.message}`);
+      throw new ValidationError(`Failed to initialize analyzer: ${(error as Error).message}`);
     }
   }
 
