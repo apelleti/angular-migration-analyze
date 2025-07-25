@@ -19,7 +19,8 @@
       "Bash(node dist/cli.js --version)",
       "Bash(node fix-imports.js)",
       "Bash(git checkout:*)",
-      "Bash(node dist/cli.js --help)"
+      "Bash(node dist/cli.js --help)",
+      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npm test -- --testPathPattern=\"AngularAnalyzer\" --testNamePattern=\"Angular 19\")"
     ],
     "deny": []
   }

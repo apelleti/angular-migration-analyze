@@ -117,11 +117,11 @@ ng-migrate fix --dry-run
 ### Préparation à une migration Angular
 
 ```bash
-# Vérifier la compatibilité avec Angular 18
-ng-migrate analyze --target-version 18
+# Vérifier la compatibilité avec Angular 18, 19 ou 20
+ng-migrate analyze --target-version 20
 
 # Générer un plan de migration
-ng-migrate fix --format script --output migrate-to-18.sh
+ng-migrate fix --format script --output migrate-to-20.sh
 ```
 
 <details>
@@ -143,7 +143,7 @@ npm install @angular/animations@^17.0.0
 
 # Étape 2: Mise à jour Angular
 echo "🔄 Mise à jour Angular..."
-ng update @angular/core@18 @angular/cli@18
+ng update @angular/core@20 @angular/cli@20
 
 # Étape 3: Corrections post-migration
 echo "🔧 Application des corrections..."
@@ -400,6 +400,8 @@ npm run dev
   - [Angular 15 → 16](docs/guides/angular-15-to-16.md)
   - [Angular 16 → 17](docs/guides/angular-16-to-17.md)
   - [Angular 17 → 18](docs/guides/angular-17-to-18.md)
+  - [Angular 18 → 19](docs/guides/angular-18-to-19.md)
+  - [Angular 19 → 20](docs/guides/angular-19-to-20.md)
 - 🏭 [Intégration CI/CD](docs/guides/ci-cd-integration.md)
 - 🏢 [Migration Monorepo](docs/guides/monorepo-migration.md)
 - 🌐 [Site Web](https://angular-migration-analyzer.dev) - Démo interactive et documentation

@@ -320,5 +320,81 @@ describe('AngularAnalyzer', () => {
       expect(results.angularPackages).toHaveLength(1);
       expect(results.angularPackages[0].name).toBe('@angular/core');
     });
+
+    it('should handle Angular 19 projects', async () => {
+      const mockPackageJson = {
+        name: 'test-project',
+        version: '1.0.0',
+        dependencies: {
+          '@angular/core': '^19.0.0',
+          '@angular/common': '^19.0.0',
+          '@angular/router': '^19.0.0'
+        },
+        devDependencies: {
+          '@angular/cli': '^19.0.0'
+        }
+      };
+
+      setupMocks(mockPackageJson);
+      setupAngularPackageMocks(['@angular/core', '@angular/common', '@angular/router', '@angular/cli']);
+
+      const analyzer = new AngularAnalyzer(mockProjectRoot, mockConfig);
+      const results = await analyzer.analyze();
+
+      expect(results.angularPackages).toHaveLength(4);
+      const corePackage = results.angularPackages.find(pkg => pkg.name === '@angular/core');
+      expect(corePackage?.currentVersion).toBe('19.0.0');
+    });
+
+    it('should handle Angular 20 projects', async () => {
+      const mockPackageJson = {
+        name: 'test-project',
+        version: '1.0.0',
+        dependencies: {
+          '@angular/core': '^20.0.0',
+          '@angular/common': '^20.0.0',
+          '@angular/router': '^20.0.0'
+        },
+        devDependencies: {
+          '@angular/cli': '^20.0.0'
+        }
+      };
+
+      setupMocks(mockPackageJson);
+      setupAngularPackageMocks(['@angular/core', '@angular/common', '@angular/router', '@angular/cli']);
+
+      const analyzer = new AngularAnalyzer(mockProjectRoot, mockConfig);
+      const results = await analyzer.analyze();
+
+      expect(results.angularPackages).toHaveLength(4);
+      const corePackage = results.angularPackages.find(pkg => pkg.name === '@angular/core');
+      expect(corePackage?.currentVersion).toBe('20.0.0');
+    });
+
+    it('should detect Node.js 22 compatibility', async () => {
+      const mockPackageJson = {
+        name: 'test-project',
+        version: '1.0.0',
+        dependencies: {
+          '@angular/core': '^19.0.0'
+        },
+        engines: {
+          node: '>=22.0.0'
+        }
+      };
+
+      setupMocks(mockPackageJson);
+      setupAngularPackageMocks(['@angular/core']);
+
+      const analyzer = new AngularAnalyzer(mockProjectRoot, mockConfig);
+      const results = await analyzer.analyze();
+
+      // Angular 19 and 20 support Node.js 22
+      expect(results.recommendations).not.toContainEqual(
+        expect.objectContaining({
+          message: expect.stringContaining('Node.js version incompatible')
+        })
+      );
+    });
   });
 });

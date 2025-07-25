@@ -88,7 +88,9 @@
         }
       }
     ],
-    "import/no-unresolved": "error",
+    "import/no-unresolved": ["error", {
+      "ignore": ["\\.js$"]
+    }],
     "import/no-cycle": "error",
     "no-console": [
       "warn",

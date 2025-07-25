@@ -13,6 +13,8 @@ Bienvenue dans la documentation complète d'Angular Migration Analyzer, votre ou
 - [Migration Angular 15 vers 16](guides/angular-15-to-16.md)
 - [Migration Angular 16 vers 17](guides/angular-16-to-17.md)
 - [Migration Angular 17 vers 18](guides/angular-17-to-18.md)
+- [Migration Angular 18 vers 19](guides/angular-18-to-19.md)
+- [Migration Angular 19 vers 20](guides/angular-19-to-20.md)
 - [Migration de monorepo](guides/monorepo-migration.md)
 - [Intégration CI/CD](guides/ci-cd-integration.md)
 

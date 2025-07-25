@@ -471,6 +471,7 @@ Améliorations typiques après migration :
 
 ## Prochaines étapes
 
+- [Migration Angular 18 vers 19](angular-18-to-19.md)
 - [Migration Monorepo](monorepo-migration.md)
 - [Intégration CI/CD](ci-cd-integration.md)
 - [Optimisation des performances](../optimization/performance.md)

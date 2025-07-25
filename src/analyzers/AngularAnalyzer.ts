@@ -6,6 +6,8 @@ import { BaseAnalyzer } from './BaseAnalyzer.js';
 
 export class AngularAnalyzer extends BaseAnalyzer {
   private readonly ANGULAR_COMPATIBILITY_MATRIX = {
+    '20': { node: '>=18.19.1 || >=20.11.1 || >=22.0.0', typescript: '>=5.6.0 <5.8.0' },
+    '19': { node: '>=18.19.1 || >=20.11.1 || >=22.0.0', typescript: '>=5.5.0 <5.7.0' },
     '18': { node: '>=18.19.1', typescript: '>=5.4.0 <5.6.0' },
     '17': { node: '>=18.13.0', typescript: '>=5.2.0 <5.5.0' },
     '16': { node: '>=16.14.0', typescript: '>=4.9.3 <5.2.0' },
