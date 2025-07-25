@@ -8,7 +8,12 @@ module.exports = {
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        esModuleInterop: true,
+        allowJs: true
+      }
+    }]
   },
   collectCoverageFrom: [
     'src/**/*.{js,ts}',
@@ -44,12 +49,4 @@ module.exports = {
     'html',
     'json-summary'
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        esModuleInterop: true,
-        allowJs: true
-      }
-    }
-  }
 };

@@ -14,7 +14,8 @@
       "Bash(./fix-build.sh)",
       "Bash(npm run lint:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(npm test:*)"
     ],
     "deny": []
   }

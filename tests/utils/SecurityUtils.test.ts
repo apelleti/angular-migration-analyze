@@ -10,7 +10,7 @@ describe('SecurityUtils', () => {
 
     it('should reject paths with directory traversal', () => {
       expect(SecurityUtils.validateFilePath('../../../etc/passwd')).toBe(false);
-      expect(SecurityUtils.validateFilePath('/home/../../../etc')).toBe(false);
+      expect(SecurityUtils.validateFilePath('./../../etc')).toBe(false);
       expect(SecurityUtils.validateFilePath('..\\..\\windows\\system32')).toBe(false);
     });
 

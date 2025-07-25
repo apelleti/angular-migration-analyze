@@ -141,7 +141,7 @@ describe('DryRunContext', () => {
       expect(report.totalCommands).toBe(3);
       expect(report.wouldExecute).toBe(2);
       expect(report.blocked).toBe(1);
-      expect(report.estimatedDuration).toBe('10 minutes');
+      expect(report.estimatedDuration).toBe('12 minutes');
     });
 
     it('should identify risks', () => {

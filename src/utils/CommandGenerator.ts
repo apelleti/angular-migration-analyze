@@ -6,7 +6,7 @@ export class CommandGenerator {
 
     try {
       // Install missing peer dependencies (non-optional only)
-      const requiredPeerDeps = results.missingPeerDeps.filter(
+      const requiredPeerDeps = (results.missingPeerDeps || []).filter(
         (dep: any) => dep.severity === 'error' && !dep.optional
       );
 
@@ -18,7 +18,7 @@ export class CommandGenerator {
       }
 
       // Angular-specific update commands
-      const outdatedAngularPackages = results.angularPackages.filter(
+      const outdatedAngularPackages = (results.angularPackages || []).filter(
         (pkg: any) => pkg.currentVersion !== pkg.targetVersion
       );
 
@@ -299,7 +299,7 @@ export class CommandGenerator {
       prerequisites.push('Corriger les problèmes critiques identifiés');
     }
 
-    const outdatedDeps = results.missingPeerDeps.filter(dep => !dep.optional);
+    const outdatedDeps = (results.missingPeerDeps || []).filter(dep => !dep.optional);
     if (outdatedDeps.length > 0) {
       prerequisites.push('Installer les peer dependencies manquantes');
     }

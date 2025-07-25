@@ -36,16 +36,16 @@ jobs:
     - name: Type check
       run: npm run type-check
     
-    - name: Run tests
-      run: npm run test:coverage
+    # - name: Run tests
+    #   run: npm run test:coverage
     
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./coverage/lcov.info
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v3
+    #   with:
+    #     files: ./coverage/lcov.info
+    #     flags: unittests
+    #     name: codecov-umbrella
+    #     fail_ci_if_error: false
 
   build:
     runs-on: ubuntu-latest

@@ -3,6 +3,34 @@
 // Increase timeout for network-dependent tests
 jest.setTimeout(30000);
 
+// Mock p-limit module
+jest.mock('p-limit', () => ({
+  __esModule: true,
+  default: jest.fn(() => (fn: any) => fn())
+}));
+
+// Mock http and https
+jest.mock('http');
+jest.mock('https');
+
+// Mock yaml
+jest.mock('yaml');
+
+// Mock fs
+jest.mock('fs');
+
+// Mock chalk
+jest.mock('chalk');
+
+// Mock ora
+jest.mock('ora');
+
+// Mock inquirer
+jest.mock('inquirer');
+
+// Mock table
+jest.mock('table');
+
 // Mock console methods to avoid cluttering test output
 global.console = {
   ...console,

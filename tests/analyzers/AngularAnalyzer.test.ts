@@ -16,13 +16,37 @@ describe('AngularAnalyzer', () => {
       includeDevDependencies: true,
       checkVulnerabilities: true,
       checkLicenses: true,
-      offlineMode: false
+      offlineMode: false,
+      excludePackages: []
     }
   };
 
   const mockNpmClient = {
     getPackageInfo: jest.fn(),
-    getLatestVersion: jest.fn()
+    getLatestVersion: jest.fn(),
+    getAngularCompatibilityMatrix: jest.fn().mockResolvedValue({}),
+    getBulkPackageInfo: jest.fn()
+  };
+
+  const setupMocks = (packageJson: any, lockJson?: any) => {
+    (fs.readFileSync as jest.Mock).mockImplementation((filePath: string) => {
+      if (filePath.includes('package-lock.json')) {
+        return JSON.stringify(lockJson || {
+          lockfileVersion: 2,
+          name: packageJson.name || 'test-project',
+          version: packageJson.version || '1.0.0',
+          packages: {
+            '': {
+              name: packageJson.name || 'test-project',
+              version: packageJson.version || '1.0.0',
+              dependencies: packageJson.dependencies || {},
+              devDependencies: packageJson.devDependencies || {}
+            }
+          }
+        });
+      }
+      return JSON.stringify(packageJson);
+    });
   };
 
   beforeEach(() => {
@@ -30,12 +54,32 @@ describe('AngularAnalyzer', () => {
     (NpmRegistryClient as jest.MockedClass<typeof NpmRegistryClient>).mockImplementation(
       () => mockNpmClient as any
     );
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    (fs.existsSync as jest.Mock).mockImplementation((filePath: string) => {
+      const normalizedPath = filePath.toString();
+      // Return false for pnpm and yarn lock files
+      if (normalizedPath.includes('pnpm-lock.yaml') || normalizedPath.includes('yarn.lock')) {
+        return false;
+      }
+      return true;
+    });
+    (fs.statSync as jest.Mock).mockImplementation((filePath: string) => {
+      const normalizedPath = filePath.toString();
+      // Throw error for pnpm and yarn lock files
+      if (normalizedPath.includes('pnpm-lock.yaml') || normalizedPath.includes('yarn.lock')) {
+        throw new Error(`ENOENT: no such file or directory, stat '${filePath}'`);
+      }
+      return {
+        isFile: () => true,
+        isDirectory: () => false
+      };
+    });
   });
 
   describe('analyze', () => {
     it('should detect Angular packages and their versions', async () => {
       const mockPackageJson = {
+        name: 'test-project',
+        version: '1.0.0',
         dependencies: {
           '@angular/core': '^15.0.0',
           '@angular/common': '^15.0.0',
@@ -48,11 +92,56 @@ describe('AngularAnalyzer', () => {
         }
       };
 
-      (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockPackageJson));
+      setupMocks(mockPackageJson);
       mockNpmClient.getLatestVersion.mockResolvedValue('18.0.0');
+      mockNpmClient.getBulkPackageInfo.mockResolvedValue({
+        '@angular/core': {
+          name: '@angular/core',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/core', version: '15.0.0' },
+            '18.0.0': { name: '@angular/core', version: '18.0.0' }
+          }
+        },
+        '@angular/common': {
+          name: '@angular/common',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/common', version: '15.0.0' },
+            '18.0.0': { name: '@angular/common', version: '18.0.0' }
+          }
+        },
+        '@angular/router': {
+          name: '@angular/router',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/router', version: '15.0.0' },
+            '18.0.0': { name: '@angular/router', version: '18.0.0' }
+          }
+        },
+        '@angular/cli': {
+          name: '@angular/cli',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular/cli', version: '15.0.0' },
+            '18.0.0': { name: '@angular/cli', version: '18.0.0' }
+          }
+        },
+        '@angular-devkit/build-angular': {
+          name: '@angular-devkit/build-angular',
+          'dist-tags': { latest: '18.0.0' },
+          versions: {
+            '15.0.0': { name: '@angular-devkit/build-angular', version: '15.0.0' },
+            '18.0.0': { name: '@angular-devkit/build-angular', version: '18.0.0' }
+          }
+        }
+      });
 
       const analyzer = new AngularAnalyzer(mockProjectRoot, mockConfig);
       const results = await analyzer.analyze();
+
+      console.log('Angular packages found:', results.angularPackages?.length);
+      console.log('Packages:', results.angularPackages);
 
       expect(results.angularPackages).toHaveLength(5);
       expect(results.angularPackages).toEqual(

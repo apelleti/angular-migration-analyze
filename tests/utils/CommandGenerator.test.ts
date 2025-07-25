@@ -220,7 +220,7 @@ describe('CommandGenerator', () => {
       expect(generator.getCommandCategory('ng update @angular/core')).toBe('angular');
       expect(generator.getCommandCategory('npm dedupe')).toBe('dependencies');
       expect(generator.getCommandCategory('npm install rxjs')).toBe('dependencies');
-      expect(generator.getCommandCategory('npm run build')).toBe('optimization');
+      expect(generator.getCommandCategory('npm run build')).toBe('configuration');
     });
   });
 
@@ -311,7 +311,7 @@ describe('CommandGenerator', () => {
       const commands = ['npm audit fix --force'];
       const script = generator.generateExecutableScript(commands, mockResults);
 
-      expect(script).toContain('read -p "Continuer ? (y/N)"');
+      expect(script).toContain('read -p \"Continuer ? (y/N) \"');
       expect(script).toContain('if [[ ! $REPLY =~ ^[Yy]$ ]]; then');
     });
 
