@@ -1,0 +1,64 @@
+# Source files (only publish built files)
+src/
+
+# Test files
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+coverage/
+.nyc_output/
+
+# Development files
+.eslintrc.json
+.prettierrc
+jest.config.js
+tsconfig.json
+.editorconfig
+
+# Documentation source
+docs/
+*.md
+!README.md
+!LICENSE
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Examples and demos
+examples/
+demo/
+
+# Temporary files
+.tmp/
+temp/
+tmp/
+*.log
+
+# Build tools
+.babelrc
+.browserlistrc
+rollup.config.js
+webpack.config.js
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Other
+.env
+.env.*
+.ng-migrate.json
+migration-report.html
+fix-dependencies.sh
