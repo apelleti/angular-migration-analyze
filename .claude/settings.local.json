@@ -20,7 +20,25 @@
       "Bash(node fix-imports.js)",
       "Bash(git checkout:*)",
       "Bash(node dist/cli.js --help)",
-      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npm test -- --testPathPattern=\"AngularAnalyzer\" --testNamePattern=\"Angular 19\")"
+      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npm test -- --testPathPattern=\"AngularAnalyzer\" --testNamePattern=\"Angular 19\")",
+      "Bash(npm link:*)",
+      "Bash(ama:*)",
+      "Bash(cp:*)",
+      "Bash(true)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(find:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(npm run ama:*)",
+      "Bash(../dist/cli.js analyze)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "Bash(tree:*)",
+      "Bash(curl:*)",
+      "Bash(./test-cli-outputs.sh:*)",
+      "Bash(./test-e2e.sh:*)",
+      "Bash(./test-e2e-simple.sh:*)"
     ],
     "deny": []
   }

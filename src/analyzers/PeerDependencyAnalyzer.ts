@@ -9,8 +9,6 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
     const missingPeerDeps: MissingPeerDep[] = [];
     const allDeps = this.getAllDependencies();
 
-    console.log('🔍 Analyse des peer dependencies via npm registry...');
-
     // Récupérer les infos de tous les packages en parallèle
     const packageInfos = await this.npmClient.getBulkPackageInfo(Object.keys(allDeps));
 
@@ -24,31 +22,45 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
         if (!packageInfo) return [];
 
         try {
-          // Résoudre la version spécifique installée
-          const versionInfo = await this.npmClient.getPackageVersion(depName, depVersion);
-          if (!versionInfo?.peerDependencies) return [];
+          // Essayer d'abord les peer dependencies du package-lock.json
+          let lockFilePeerDeps = this.getPeerDependenciesFromLockFile(depName);
+          
+          // Si pas trouvé dans le lock file, fallback vers l'API npm
+          if (!lockFilePeerDeps || Object.keys(lockFilePeerDeps).length === 0) {
+            const installedVersion = this.getInstalledVersion(depName) || depVersion;
+            const cleanVersion = this.cleanVersion(installedVersion);
+            
+            if (!cleanVersion) return [];
+
+            const versionInfo = packageInfo.versions[cleanVersion];
+            if (!versionInfo?.peerDependencies) return [];
+            
+            lockFilePeerDeps = versionInfo.peerDependencies;
+          }
+
+          // Si toujours pas de peer dependencies, rien à analyser
+          if (!lockFilePeerDeps || Object.keys(lockFilePeerDeps).length === 0) {
+            return [];
+          }
 
           const peerDeps: MissingPeerDep[] = [];
 
           // Analyser chaque peer dependency
-          for (const [peerName, peerVersion] of Object.entries(versionInfo.peerDependencies)) {
-            const isOptional = versionInfo.peerDependenciesMeta?.[peerName]?.optional || false;
-
+          for (const [peerName, peerVersion] of Object.entries(lockFilePeerDeps)) {
             // Vérifier si la peer dependency est satisfaite
             if (!this.isPeerDependencySatisfied(peerName, peerVersion, allDeps)) {
               peerDeps.push({
                 package: peerName,
                 requiredBy: depName,
                 requiredVersion: peerVersion,
-                optional: isOptional,
-                severity: isOptional ? 'warning' : 'error',
+                severity: 'error',
               });
             }
           }
 
           return peerDeps;
         } catch (error) {
-          console.warn(`Erreur lors de l'analyse de ${depName}:`, error.message);
+          console.warn(`Erreur lors de l'analyse de ${depName}: ${error.message}`);
           return [];
         }
       })
@@ -61,18 +73,51 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
     return { missingPeerDeps };
   }
 
+  private getPeerDependenciesFromLockFile(packageName: string): Record<string, string> | null {
+    if (!this.lockFile) return null;
+
+    // Pour npm (lockfileVersion 2+)
+    if ('packages' in this.lockFile && this.lockFile.packages) {
+      const nodeModulesKey = `node_modules/${packageName}`;
+      const packageInfo = this.lockFile.packages[nodeModulesKey];
+      
+      if (packageInfo && 'peerDependencies' in packageInfo && packageInfo.peerDependencies) {
+        return packageInfo.peerDependencies;
+      }
+    }
+
+    // Pour npm ancien format (lockfileVersion 1)
+    if ('dependencies' in this.lockFile && this.lockFile.dependencies) {
+      const dep = this.lockFile.dependencies[packageName];
+      if (dep && dep.peerDependencies) {
+        return dep.peerDependencies;
+      }
+    }
+
+    return null;
+  }
+
   private isPeerDependencySatisfied(
     peerName: string,
     requiredVersion: string,
     installedDeps: Record<string, string>
   ): boolean {
-    const installedVersion = installedDeps[peerName];
-    if (!installedVersion) return false;
+    // Utiliser la version réellement installée depuis le lock file
+    const declaredVersion = installedDeps[peerName];
+    
+    if (!declaredVersion) {
+      return false;
+    }
+    
+    const installedVersion = this.getInstalledVersion(peerName) || declaredVersion;
 
     try {
       // Nettoyer la version installée (enlever ^, ~, etc.)
       const cleanInstalledVersion = semver.coerce(installedVersion)?.version;
-      if (!cleanInstalledVersion) return false;
+      
+      if (!cleanInstalledVersion) {
+        return false;
+      }
 
       return semver.satisfies(cleanInstalledVersion, requiredVersion);
     } catch (error) {

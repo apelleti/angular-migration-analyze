@@ -75,10 +75,6 @@ tmp/
 # TypeScript cache
 *.tsbuildinfo
 
-# Package manager files
-yarn.lock
-package-lock.json
-pnpm-lock.yaml
-
 # User configuration
-.ng-migrate.json
+.ama.json
+.migration-cache.json

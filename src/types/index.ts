@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 export interface PackageInfo {
   name: string;
   version: string;
@@ -10,7 +8,7 @@ export interface PackageInfo {
   scripts?: Record<string, string>;
 }
 
-// Types stricts pour les lock files
+// Lock file types
 export interface NpmLockFile {
   name: string;
   version: string;
@@ -31,30 +29,6 @@ export interface NpmLockPackage {
   peerDependencies?: Record<string, string>;
 }
 
-export interface PnpmLockFile {
-  lockfileVersion: string;
-  settings?: Record<string, any>;
-  dependencies?: Record<string, PnpmDependency>;
-  devDependencies?: Record<string, PnpmDependency>;
-  packages?: Record<string, PnpmPackage>;
-}
-
-export interface PnpmDependency {
-  specifier: string;
-  version: string;
-}
-
-export interface PnpmPackage {
-  resolution: {
-    integrity: string;
-    tarball?: string;
-  };
-  dependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  dev?: boolean;
-  optional?: boolean;
-}
-
 export interface LockFileEntry {
   version: string;
   resolved?: string;
@@ -64,7 +38,133 @@ export interface LockFileEntry {
   requires?: Record<string, string>;
 }
 
-// Configuration avec support proxy
+// Configuration
+export interface AnalyzerConfig {
+  registry: string;
+  timeout: number;
+  retries: number;
+  maxConcurrentRequests: number;
+  targetAngularVersion?: string;
+  network: {
+    proxy?: {
+      enabled: boolean;
+      host?: string;
+      port?: number;
+      protocol: 'http' | 'https';
+      bypassList: string[];
+    };
+    strictSSL: boolean;
+    timeout: number;
+  };
+  cache: {
+    enabled: boolean;
+    ttl: number;
+    maxSize: number;
+    persistToDisk: boolean;
+    diskCachePath: string;
+  };
+  analysis: {
+    includeDevDependencies: boolean;
+    checkVulnerabilities: boolean;
+    skipOptionalPeerDeps: boolean;
+    excludePackages: string[];
+    offlineMode: boolean;
+  };
+}
+
+// Analysis results
+export interface AnalysisResult {
+  missingPeerDeps: MissingPeerDep[];
+  incompatibleVersions: IncompatibleVersion[];
+  conflicts: VersionConflict[];
+  angularPackages: AngularPackageInfo[];
+  recommendations: Recommendation[];
+  migrationPath: MigrationStep[];
+  ngUpdateInfo?: string | null;
+  metadata?: {
+    timestamp: string;
+    projectPath: string;
+    networkAccessible: boolean;
+    hasLockFile: boolean;
+    registry: string;
+  };
+}
+
+export interface MissingPeerDep {
+  package: string;
+  requiredBy: string;
+  requiredVersion: string;
+  severity: 'error' | 'warning';
+}
+
+export interface IncompatibleVersion {
+  package: string;
+  currentVersion: string;
+  requiredVersion: string;
+  reason: string;
+  severity: 'error' | 'warning';
+}
+
+export interface VersionConflict {
+  package: string;
+  versions: Array<{
+    version: string;
+    requiredBy: string[];
+  }>;
+  severity: 'error' | 'warning';
+}
+
+export interface AngularPackageInfo {
+  name: string;
+  currentVersion: string;
+  targetVersion?: string;
+  latestVersion?: string;
+  isDeprecated?: boolean;
+}
+
+export interface Recommendation {
+  message: string;
+  priority: 'high' | 'medium' | 'low';
+  action?: string;
+  package?: string;
+}
+
+export interface MigrationStep {
+  order: number;
+  description: string;
+  command?: string;
+  isBreaking?: boolean;
+}
+
+// Error types
+export class NetworkError extends Error {
+  constructor(
+    message: string,
+    public code?: string | number,
+    public retryAfter?: number
+  ) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class ParseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ParseError';
+  }
+}
+
+// Schema for configuration validation
+import { z } from 'zod';
+
 export const AnalyzerConfigSchema = z.object({
   registry: z.string().url().default('https://registry.npmjs.org'),
   timeout: z.number().min(1000).max(60000).default(10000),
@@ -100,7 +200,7 @@ export const AnalyzerConfigSchema = z.object({
   analysis: z
     .object({
       includeDevDependencies: z.boolean().default(true),
-      checkVulnerabilities: z.boolean().default(true),
+      checkVulnerabilities: z.boolean().default(false),
       skipOptionalPeerDeps: z.boolean().default(false),
       excludePackages: z.array(z.string()).default([]),
       offlineMode: z.boolean().default(false),
@@ -108,213 +208,97 @@ export const AnalyzerConfigSchema = z.object({
     .default({}),
 });
 
-export type AnalyzerConfig = z.infer<typeof AnalyzerConfigSchema>;
+export type AnalyzerConfigType = z.infer<typeof AnalyzerConfigSchema>;
 
-// Types pour la configuration proxy
-export interface ProxyConfig {
-  enabled: boolean;
-  host: string;
-  port: number;
-  protocol: 'http' | 'https';
-  bypassList?: string[];
-}
-
-// Erreurs personnalisées
-export class NetworkError extends Error {
-  constructor(
-    message: string,
-    public statusCode?: number,
-    public retryAfter?: number
-  ) {
-    super(message);
-    this.name = 'NetworkError';
-  }
-}
-
-export class ParseError extends Error {
-  constructor(
-    message: string,
-    public filePath?: string
-  ) {
-    super(message);
-    this.name = 'ParseError';
-  }
-}
-
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    public field?: string
-  ) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-// Progress tracking
-export interface AnalysisProgress {
-  total: number;
-  completed: number;
-  currentTask: string;
-  percentage: number;
-  startTime: number;
-  estimatedTimeRemaining?: number;
-}
-
-export interface AnalysisResult {
-  missingPeerDeps: MissingPeerDep[];
-  incompatibleVersions: IncompatibleVersion[];
-  conflicts: DependencyConflict[];
-  angularPackages: AngularPackageInfo[];
-  recommendations: Recommendation[];
-  migrationPath: MigrationStep[];
-  summary: AnalysisSummary;
-  metadata: AnalysisMetadata;
-}
-
-export interface AnalysisSummary {
-  totalIssues: number;
-  criticalIssues: number;
-  warnings: number;
-  angularPackagesCount: number;
-  recommendationsCount: number;
-  healthScore: number;
-  securityIssues?: number;
-  performanceIssues?: number;
-  configurationIssues?: number;
-}
-
-export interface AnalysisMetadata {
-  timestamp: string;
-  duration: number;
-  nodeVersion: string;
-  platform: string;
+// Migration-specific types
+export interface MigrationConfig {
   projectPath: string;
-  analyzerVersion: string;
-  packageManager: 'npm' | 'pnpm' | 'yarn';
-  configUsed?: any;
+  fromVersion?: string;
+  toVersion?: string;
 }
 
-export interface MissingPeerDep {
-  package: string;
-  requiredBy: string;
-  requiredVersion: string;
-  optional: boolean;
-  severity: 'error' | 'warning';
+export interface DeprecatedPattern {
+  type: string;
+  file: string;
+  line: number;
+  column?: number;
+  autoFixable: boolean;
+  description: string;
 }
 
-export interface IncompatibleVersion {
-  package: string;
-  currentVersion: string;
-  requiredVersion: string;
-  requiredBy: string[];
-  severity: 'error' | 'warning';
-}
-
-export interface DependencyConflict {
-  package: string;
-  versions: Array<{
-    version: string;
-    requiredBy: string[];
+export interface BreakingChange {
+  id: string;
+  version: string;
+  category: 'api' | 'dependency' | 'tooling' | 'syntax';
+  severity: 'critical' | 'major' | 'minor';
+  description: string;
+  detection: {
+    filePattern?: string;
+    codePattern?: RegExp;
+    astQuery?: string;
+  };
+  solution: {
+    automatic?: boolean;
+    codeTransform?: string;
+    manualSteps?: string[];
+  };
+  examples: Array<{
+    before: string;
+    after: string;
   }>;
-  severity: 'error' | 'warning';
-  resolution?: string;
 }
 
-export interface AngularPackageInfo {
-  name: string;
-  currentVersion: string;
-  latestVersion: string;
-  targetVersion: string;
-  migrationGuide?: string;
-  hasBreakingChanges: boolean;
-  migrationComplexity: 'low' | 'medium' | 'high';
+export interface MigrationPlan {
+  phases: Array<{
+    name: string;
+    tasks: string[];
+    duration: string;
+  }>;
+  totalEstimate: string;
 }
 
-export interface Recommendation {
-  type: 'error' | 'warning' | 'info';
-  category: 'security' | 'compatibility' | 'performance' | 'migration' | 'configuration';
-  message: string;
-  package?: string;
-  action?: string;
-  command?: string;
-  priority: 'high' | 'medium' | 'low';
-  estimatedEffort?: string;
+export interface DependencyAnalysis {
+  incompatible: Array<{
+    package: string;
+    currentVersion: string;
+    requiredVersion: string;
+    reason: string;
+  }>;
+  deprecated: Array<{
+    package: string;
+    status: string;
+    alternative?: string;
+  }>;
+  total: number;
 }
 
-export interface MigrationStep {
-  order: number;
-  description: string;
-  commands: string[];
-  validation?: string;
-  estimatedDuration?: string;
-  prerequisites?: string[];
-  postSteps?: string[];
+export interface PeerDependencyAnalysis {
+  conflicts: Array<{
+    package: string;
+    required: string;
+    installed: string;
+    resolution: string;
+    impact?: string;
+  }>;
 }
 
-// Security types
-export interface SecurityVulnerability {
-  package: string;
-  version: string;
-  severity: 'low' | 'moderate' | 'high' | 'critical';
-  title: string;
-  description: string;
-  references: string[];
-  patchedVersions: string;
-  vulnerableVersions: string;
-  cve?: string[];
+export interface AnalysisReport {
+  projectPath: string;
+  fromVersion: string;
+  toVersion: string;
+  summary: {
+    filesImpacted: number;
+    breakingChanges: number;
+    peerDepConflicts: number;
+    estimatedEffort: string;
+  };
+  dependencies: DependencyAnalysis;
+  patterns: DeprecatedPattern[];
+  peerDependencies: PeerDependencyAnalysis;
+  migrationPlan: MigrationPlan;
 }
 
-export interface DeprecatedPackage {
-  name: string;
-  version: string;
-  deprecationMessage?: string;
-  alternatives?: string[];
-  lastUpdate: string;
-}
-
-export interface LicenseInfo {
-  package: string;
-  version: string;
-  license: string;
-  compatible: boolean;
-  concerns?: string[];
-}
-
-// Performance types
-export interface BundleAnalysis {
-  totalSize: number;
-  packageSizes: Array<{ name: string; size: number }>;
-  largestPackages: Array<{ name: string; size: number }>;
-  estimatedBundleSize: number;
-}
-
-export interface DuplicatedDependency {
-  package: string;
-  versions: string[];
-  estimatedWaste: number;
-}
-
-export interface OptimizationSuggestion {
-  type: 'bundle-size' | 'duplicates' | 'tree-shaking' | 'lazy-loading';
-  description: string;
-  action: string;
-  command?: string;
-  impact: 'low' | 'medium' | 'high';
-  estimatedSavings?: string;
-}
-
-// Configuration types
-export interface ConfigurationIssue {
-  type: 'configuration' | 'build' | 'code-quality';
-  severity: 'error' | 'warning' | 'info';
-  description: string;
-  solution: string;
-}
-
-export interface ModernizationSuggestion {
-  type: 'configuration' | 'build-optimization' | 'modernization' | 'testing' | 'linting';
-  description: string;
-  action: string;
-  command?: string;
+export interface ValidationResult {
+  passed: boolean;
+  issues: string[];
 }

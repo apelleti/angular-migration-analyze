@@ -1,0 +1,105 @@
+{
+  "breaking-changes-18-19": {
+    "data": [
+      {
+        "id": "angular-v19-control-flow-stable",
+        "version": "19.0.0",
+        "category": "syntax",
+        "severity": "major",
+        "description": "New control flow (@if, @for, @switch) is now the recommended approach",
+        "detection": {
+          "codePattern": {}
+        },
+        "solution": {
+          "automatic": true,
+          "codeTransform": "migrate-control-flow",
+          "manualSteps": [
+            "Run: ng generate @angular/core:control-flow"
+          ]
+        },
+        "examples": [
+          {
+            "before": "<div *ngIf=\"condition\">Content</div>",
+            "after": "@if (condition) { <div>Content</div> }"
+          }
+        ]
+      },
+      {
+        "id": "angular-v19-event-replay",
+        "version": "19.0.0",
+        "category": "api",
+        "severity": "minor",
+        "description": "Event replay feature available for better hydration",
+        "detection": {
+          "filePattern": "main.ts"
+        },
+        "solution": {
+          "automatic": false,
+          "manualSteps": [
+            "Consider enabling event replay for better SSR hydration"
+          ]
+        },
+        "examples": []
+      },
+      {
+        "id": "angular-v19-zoneless-experimental",
+        "version": "19.0.0",
+        "category": "api",
+        "severity": "minor",
+        "description": "Zoneless change detection experimental support",
+        "detection": {
+          "filePattern": "**/*.component.ts"
+        },
+        "solution": {
+          "automatic": false,
+          "manualSteps": [
+            "Evaluate zoneless change detection for performance gains"
+          ]
+        },
+        "examples": []
+      },
+      {
+        "id": "angular-v19-viewchild-signals",
+        "version": "19.0.0",
+        "category": "api",
+        "severity": "minor",
+        "description": "ViewChild can now use signal-based queries",
+        "detection": {
+          "codePattern": {}
+        },
+        "solution": {
+          "automatic": false,
+          "manualSteps": [
+            "Consider migrating to signal-based ViewChild queries"
+          ]
+        },
+        "examples": [
+          {
+            "before": "@ViewChild(\"ref\", { static: false }) ref: ElementRef;",
+            "after": "ref = viewChild<ElementRef>(\"ref\");"
+          }
+        ]
+      },
+      {
+        "id": "typescript-version",
+        "version": "19.0.0",
+        "category": "dependency",
+        "severity": "critical",
+        "description": "TypeScript version must be updated for Angular 19",
+        "detection": {
+          "filePattern": "package.json"
+        },
+        "solution": {
+          "automatic": true,
+          "codeTransform": "update-typescript",
+          "manualSteps": [
+            "Update TypeScript to the version required by Angular 19"
+          ]
+        },
+        "examples": []
+      }
+    ],
+    "timestamp": 1754039738691,
+    "ttl": 86400000
+  }
+}

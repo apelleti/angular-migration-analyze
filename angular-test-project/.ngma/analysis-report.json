@@ -1,0 +1,223 @@
+{
+  "projectPath": "angular-test-project",
+  "fromVersion": "18",
+  "toVersion": "19",
+  "summary": {
+    "filesImpacted": 3,
+    "breakingChanges": 5,
+    "peerDepConflicts": 23,
+    "estimatedEffort": "6 days"
+  },
+  "dependencies": {
+    "incompatible": [],
+    "deprecated": [
+      {
+        "package": "@angular/flex-layout",
+        "status": "deprecated",
+        "alternative": "@angular/cdk/layout"
+      }
+    ],
+    "total": 21
+  },
+  "patterns": [
+    {
+      "type": "structural-directives",
+      "file": "/home/antoine/dev/angular-migration-analyze/angular-test-project/src/app/app.component.ts",
+      "line": 11,
+      "column": 3,
+      "autoFixable": true,
+      "description": "Consider migrating to new control flow syntax (@if, @for, @switch)"
+    },
+    {
+      "type": "viewchild-static-false",
+      "file": "/home/antoine/dev/angular-migration-analyze/angular-test-project/src/app/app.component.ts",
+      "line": 66,
+      "column": 3,
+      "autoFixable": true,
+      "description": "ViewChild with static: false is now the default"
+    },
+    {
+      "type": "viewchild-static-false",
+      "file": "/home/antoine/dev/angular-migration-analyze/angular-test-project/src/app/app.component.ts",
+      "line": 67,
+      "column": 3,
+      "autoFixable": true,
+      "description": "ViewChild with static: false is now the default"
+    }
+  ],
+  "peerDependencies": {
+    "conflicts": [
+      {
+        "package": "@angular/core",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/common",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/common from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/common",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/common from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/animations",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/animations from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/common",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/common from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/common",
+        "required": "18.2.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/common from 18.2.3 to 18.2.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "^15.0.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to ^15.0.0"
+      },
+      {
+        "package": "@angular/common",
+        "required": "^15.0.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/common from 18.2.3 to ^15.0.0"
+      },
+      {
+        "package": "@angular/core",
+        "required": "^15.0.0",
+        "installed": "18.2.3",
+        "resolution": "Update @angular/core from 18.2.3 to ^15.0.0"
+      },
+      {
+        "package": "jest",
+        "required": "^29.5.0",
+        "installed": "not installed",
+        "resolution": "npm install jest@^29.5.0"
+      },
+      {
+        "package": "ng-packagr",
+        "required": "^18.0.0",
+        "installed": "not installed",
+        "resolution": "npm install ng-packagr@^18.0.0"
+      },
+      {
+        "package": "protractor",
+        "required": "^7.0.0",
+        "installed": "not installed",
+        "resolution": "npm install protractor@^7.0.0"
+      },
+      {
+        "package": "tailwindcss",
+        "required": "^2.0.0 || ^3.0.0",
+        "installed": "not installed",
+        "resolution": "npm install tailwindcss@^2.0.0 || ^3.0.0"
+      },
+      {
+        "package": "browser-sync",
+        "required": "^3.0.2",
+        "installed": "not installed",
+        "resolution": "npm install browser-sync@^3.0.2"
+      },
+      {
+        "package": "@web/test-runner",
+        "required": "^0.18.0",
+        "installed": "not installed",
+        "resolution": "npm install @web/test-runner@^0.18.0"
+      },
+      {
+        "package": "@angular/localize",
+        "required": "^18.0.0",
+        "installed": "not installed",
+        "resolution": "npm install @angular/localize@^18.0.0"
+      },
+      {
+        "package": "jest-environment-jsdom",
+        "required": "^29.5.0",
+        "installed": "not installed",
+        "resolution": "npm install jest-environment-jsdom@^29.5.0"
+      },
+      {
+        "package": "@angular/service-worker",
+        "required": "^18.0.0",
+        "installed": "not installed",
+        "resolution": "npm install @angular/service-worker@^18.0.0"
+      },
+      {
+        "package": "@angular/platform-server",
+        "required": "^18.0.0",
+        "installed": "not installed",
+        "resolution": "npm install @angular/platform-server@^18.0.0"
+      }
+    ]
+  },
+  "migrationPlan": {
+    "phases": [
+      {
+        "name": "Preparation",
+        "tasks": [
+          "Backup project (git checkout -b migration-backup)",
+          "Update TypeScript to compatible version",
+          "Resolve peer dependency conflicts"
+        ],
+        "duration": "2-4 hours"
+      },
+      {
+        "name": "Migration",
+        "tasks": [
+          "Run: ng update @angular/core@19 @angular/cli@19",
+          "Apply automatic fixes: ngma fix --auto-safe",
+          "Fix remaining issues manually"
+        ],
+        "duration": "4-8 hours"
+      },
+      {
+        "name": "Validation",
+        "tasks": [
+          "Run tests: npm test",
+          "Build application: npm run build",
+          "Verify functionality manually",
+          "Run: ngma validate"
+        ],
+        "duration": "2-3 hours"
+      }
+    ],
+    "totalEstimate": "1-2 days"
+  }
+}

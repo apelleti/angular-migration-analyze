@@ -2,39 +2,35 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as semver from 'semver';
-import * as yaml from 'yaml';
 
 import type {
   PackageInfo,
   NpmLockFile,
-  PnpmLockFile,
   AnalysisResult,
   AnalyzerConfig,
-  AnalysisSummary,
-  AnalysisMetadata,
-  AnalysisProgress,
 } from '../types/index.js';
 import { ParseError, ValidationError } from '../types/index.js';
 import { NpmRegistryClient } from '../utils/NpmRegistryClient.js';
 
 export abstract class BaseAnalyzer {
   protected packageJson: PackageInfo;
-  protected lockFile: NpmLockFile | PnpmLockFile | null;
+  protected lockFile: NpmLockFile | null;
   protected projectRoot: string;
   protected npmClient: NpmRegistryClient;
   protected config: AnalyzerConfig;
   protected packageManager: 'npm' | 'pnpm' | 'yarn';
-  protected progressCallback?: (progress: AnalysisProgress) => void;
+  protected progressCallback?: (progress: any) => void;
 
   constructor(
     projectRoot: string = process.cwd(),
     config: AnalyzerConfig,
-    progressCallback?: (progress: AnalysisProgress) => void
+    progressCallback?: (progress: any) => void,
+    npmClient?: NpmRegistryClient
   ) {
     this.projectRoot = path.resolve(projectRoot);
     this.config = config;
     this.progressCallback = progressCallback;
-    this.npmClient = new NpmRegistryClient(config);
+    this.npmClient = npmClient || new NpmRegistryClient(config);
 
     try {
       this.packageJson = this.loadPackageJson();
@@ -49,7 +45,7 @@ export abstract class BaseAnalyzer {
     const packagePath = path.join(this.projectRoot, 'package.json');
 
     if (!this.fileExists(packagePath)) {
-      throw new ParseError('package.json not found', packagePath);
+      throw new ParseError('package.json not found');
     }
 
     try {
@@ -64,30 +60,30 @@ export abstract class BaseAnalyzer {
       return parsed as PackageInfo;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new ParseError(`Invalid JSON in package.json: ${error.message}`, packagePath);
+        throw new ParseError(`Invalid JSON in package.json: ${error.message}`);
       }
       throw error;
     }
   }
 
-  private loadLockFile(): NpmLockFile | PnpmLockFile | null {
+  private loadLockFile(): NpmLockFile | null {
     const npmLockPath = path.join(this.projectRoot, 'package-lock.json');
-    const pnpmLockPath = path.join(this.projectRoot, 'pnpm-lock.yaml');
     const yarnLockPath = path.join(this.projectRoot, 'yarn.lock');
+    const pnpmLockPath = path.join(this.projectRoot, 'pnpm-lock.yaml');
 
-    // Try pnpm first
-    if (this.fileExists(pnpmLockPath)) {
-      return this.loadPnpmLock(pnpmLockPath);
-    }
-
-    // Then npm
+    // Try npm
     if (this.fileExists(npmLockPath)) {
       return this.loadNpmLock(npmLockPath);
     }
 
-    // Yarn lock exists but we don't parse it yet
+    // Yarn or pnpm lock exists but not supported
     if (this.fileExists(yarnLockPath)) {
-      console.warn('Yarn lock file detected but not fully supported yet');
+      console.warn('Yarn lock file detected but not supported');
+      return null;
+    }
+
+    if (this.fileExists(pnpmLockPath)) {
+      console.warn('Pnpm lock file detected but not supported');
       return null;
     }
 
@@ -108,25 +104,9 @@ export abstract class BaseAnalyzer {
       return parsed as NpmLockFile;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new ParseError(`Invalid JSON in package-lock.json: ${error.message}`, lockPath);
+        throw new ParseError(`Invalid JSON in package-lock.json: ${error.message}`);
       }
       throw error;
-    }
-  }
-
-  private loadPnpmLock(lockPath: string): PnpmLockFile {
-    try {
-      const content = fs.readFileSync(lockPath, 'utf8');
-      const parsed = yaml.parse(content);
-
-      // Validate pnpm lock file structure
-      if (!parsed.lockfileVersion) {
-        throw new ValidationError('Invalid pnpm lock file: missing lockfileVersion');
-      }
-
-      return parsed as PnpmLockFile;
-    } catch (error) {
-      throw new ParseError(`Failed to parse pnpm-lock.yaml: ${error.message}`, lockPath);
     }
   }
 
@@ -140,7 +120,7 @@ export abstract class BaseAnalyzer {
     return 'npm';
   }
 
-  protected getAllDependencies(): Record<string, string> {
+  public getAllDependencies(): Record<string, string> {
     const allDeps = {
       ...this.packageJson.dependencies,
       ...(this.config.analysis.includeDevDependencies ? this.packageJson.devDependencies : {}),
@@ -177,6 +157,62 @@ export abstract class BaseAnalyzer {
     );
   }
 
+  /**
+   * Obtient la version réellement installée d'un package depuis le lock file
+   * @param packageName Nom du package
+   * @returns Version installée ou null si non trouvée
+   */
+  public getInstalledVersion(packageName: string): string | null {
+    if (!this.lockFile) {
+      // Pas de lock file, on utilise la version du package.json
+      return this.getAllDependencies()[packageName] || null;
+    }
+
+    // Pour npm (lockfileVersion 2+)
+    if ('packages' in this.lockFile && this.lockFile.packages) {
+      // D'abord chercher dans node_modules/packageName
+      const nodeModulesKey = `node_modules/${packageName}`;
+      const packageInfo = this.lockFile.packages[nodeModulesKey];
+      
+      if (packageInfo && 'version' in packageInfo && packageInfo.version) {
+        return packageInfo.version;
+      }
+      
+      // Sinon chercher avec le préfixe vide (root dependencies)
+      if (this.lockFile.packages[''] && this.lockFile.packages[''].dependencies) {
+        const rootDeps = this.lockFile.packages[''].dependencies;
+        
+        if (rootDeps[packageName]) {
+          // Chercher la version résolue avec gestion des packages scoped
+          const searchPattern = packageName.startsWith('@') 
+            ? packageName // Pour @angular/core, chercher exactement @angular/core
+            : `/${packageName}`; // Pour les packages normaux
+          
+          for (const [key, value] of Object.entries(this.lockFile.packages)) {
+            const matches = packageName.startsWith('@') 
+              ? key === `node_modules/${packageName}` // Correspondance exacte pour scoped packages
+              : key.endsWith(searchPattern); // Correspondance suffixe pour packages normaux
+              
+            if (matches && 'version' in value && value.version) {
+              return value.version;
+            }
+          }
+        }
+      }
+    }
+
+    // Pour npm ancien format (lockfileVersion 1)
+    if ('dependencies' in this.lockFile && this.lockFile.dependencies) {
+      const dep = this.lockFile.dependencies[packageName];
+      if (dep && dep.version) {
+        return dep.version;
+      }
+    }
+
+    // Fallback sur package.json
+    return this.getAllDependencies()[packageName] || null;
+  }
+
   protected fileExists(filePath: string): boolean {
     try {
       return fs.statSync(filePath).isFile();
@@ -188,7 +224,7 @@ export abstract class BaseAnalyzer {
   protected updateProgress(current: number, total: number, task: string): void {
     if (!this.progressCallback) return;
 
-    const progress: AnalysisProgress = {
+    const progress = {
       total,
       completed: current,
       currentTask: task,
@@ -197,47 +233,6 @@ export abstract class BaseAnalyzer {
     };
 
     this.progressCallback(progress);
-  }
-
-  protected generateSummary(results: Partial<AnalysisResult>): AnalysisSummary {
-    const criticalIssues =
-      (results.missingPeerDeps?.filter(dep => !dep.optional) || []).length +
-      (results.incompatibleVersions?.filter(iv => iv.severity === 'error') || []).length +
-      (results.conflicts?.filter(c => c.severity === 'error') || []).length;
-
-    const warnings =
-      (results.missingPeerDeps?.filter(dep => dep.optional) || []).length +
-      (results.incompatibleVersions?.filter(iv => iv.severity === 'warning') || []).length +
-      (results.conflicts?.filter(c => c.severity === 'warning') || []).length;
-
-    const totalIssues = criticalIssues + warnings;
-
-    // Calculate health score (0-100)
-    let healthScore = 100;
-    healthScore -= criticalIssues * 15; // Critical issues impact more
-    healthScore -= warnings * 5;
-    healthScore = Math.max(0, Math.min(100, healthScore));
-
-    return {
-      totalIssues,
-      criticalIssues,
-      warnings,
-      angularPackagesCount: results.angularPackages?.length || 0,
-      recommendationsCount: results.recommendations?.length || 0,
-      healthScore,
-    };
-  }
-
-  protected generateMetadata(): AnalysisMetadata {
-    return {
-      timestamp: new Date().toISOString(),
-      duration: 0, // Will be set by the main analyzer
-      nodeVersion: process.version,
-      platform: process.platform,
-      projectPath: this.projectRoot,
-      analyzerVersion: '1.0.0', // Should come from package.json
-      packageManager: this.packageManager,
-    };
   }
 
   protected validateVersion(version: string): boolean {
