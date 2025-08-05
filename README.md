@@ -1,6 +1,8 @@
 # Angular Migration Analyzer (ngma)
 
-A smart CLI tool to analyze and prepare your Angular projects for migration.
+A smart CLI tool to analyze and prepare your Angular projects for migration to the next major version (n+1). Provides suggestions and recommendations without modifying your code.
+
+**Supports Angular 17+ only**
 
 ## 🚀 Quick Start
 
@@ -15,22 +17,23 @@ npx angular-migration-analyzer scan
 ## 📋 Commands
 
 ### `ngma scan`
-Analyze your project for migration issues:
+Analyze your project for migration issues to the next major version (n+1):
 
 ```bash
-ngma scan                     # Analyze current directory
-ngma scan -t 18              # Target Angular 18
+ngma scan                     # Analyze current directory (auto-detect version)
 ngma scan -o report.json     # Save report to file
 ngma scan --json             # Output JSON format
+ngma scan --ci --threshold high  # CI mode: fail if high/critical issues found
 ```
 
-### `ngma fix`
-Apply automatic fixes for common issues:
+### `ngma suggest`
+Get migration suggestions without modifying files:
 
 ```bash
-ngma fix --auto-safe         # Apply only safe fixes
-ngma fix --dry-run          # Preview changes
-ngma fix -r report.json     # Use existing report
+ngma suggest                      # Display suggestions in console
+ngma suggest --format markdown    # Export as markdown
+ngma suggest -o suggestions.json  # Save to file
+ngma suggest -r report.json      # Use existing scan report
 ```
 
 ### `ngma validate`
@@ -43,10 +46,15 @@ ngma validate --strict      # Fail on warnings
 
 ## 🔍 What it detects
 
-- **Breaking Changes**: ViewChild static, ModuleWithProviders generics, deprecated imports
-- **Dependency Issues**: Incompatible packages, peer dependency conflicts
-- **Code Patterns**: Legacy syntax, deprecated APIs, anti-patterns
-- **TypeScript Config**: Outdated compiler options
+- **Breaking Changes**: Dynamically fetched from Angular Update Guide API
+- **Dependency Issues**: Incompatible packages, peer dependency conflicts  
+- **Code Patterns**: Dynamically loaded patterns based on your Angular version
+  - Control flow directives (*ngIf → @if)
+  - Signals migration opportunities
+  - Deprecated RxJS imports
+  - ViewChild static flags
+  - ModuleWithProviders generics
+- **Peer Dependencies**: Complex conflicts with --legacy-peer-deps suggestions
 
 ## 📊 Example Output
 
@@ -56,7 +64,7 @@ ngma validate --strict      # Fail on warnings
 
 📋 Summary
   Current Version: 15
-  Target Version: 16
+  Target Version: 16 (automatic n+1)
   Files Impacted: 23
   Breaking Changes: 5
   Peer Dep Conflicts: 2
@@ -85,20 +93,56 @@ ngma validate --strict      # Fail on warnings
    ngma scan
    ```
 
-2. **Apply** automatic fixes:
+2. **Review** suggestions:
    ```bash
-   ngma fix --auto-safe
+   ngma suggest --format markdown -o migration-plan.md
    ```
 
-3. **Migrate** Angular:
+3. **Apply** suggestions manually following the recommendations
+
+4. **Migrate** Angular:
    ```bash
-   ng update @angular/core@16 @angular/cli@16
+   # If peer dependency conflicts exist:
+   npm install --legacy-peer-deps
+   ng update @angular/core@18 @angular/cli@18
+   
+   # Otherwise:
+   ng update @angular/core@18 @angular/cli@18
    ```
 
-4. **Validate** the result:
-   ```bash
-   ngma validate
-   ```
+5. **Validate** and fix peer dependencies post-migration
+
+## 🚀 CI/CD Integration
+
+### Quick Jenkins Integration
+
+```bash
+# Automated migration with conflict resolution
+./jenkins/auto-migration.sh
+
+# This script will:
+# 1. Analyze your project
+# 2. Generate fix commands for conflicts
+# 3. Create and execute a custom migration script
+# 4. Avoid using --force when possible
+```
+
+### Other CI Systems
+
+```bash
+# GitLab CI / GitHub Actions / CircleCI
+npm install -g ng-migration-analyzer
+ngma scan --ci --threshold high --quiet
+```
+
+Exit codes:
+- `0`: No issues above threshold
+- `1`: Issues found or error
+
+See:
+- [Jenkins Guide](jenkins/JENKINS_GUIDE.md) - Detailed Jenkins integration
+- [CI/CD Integration Guide](CI_CD_INTEGRATION.md) - All CI systems
+- [migration-script.sh](jenkins/migration-script.sh) - Ready-to-use Jenkins script
 
 ## 🎯 Features
 
@@ -114,11 +158,3 @@ ngma validate --strict      # Fail on warnings
 - Node.js 16+
 - Angular project with package.json
 - TypeScript 4.7+
-
-## 🤝 Contributing
-
-Issues and PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## 📄 License
-
-MIT

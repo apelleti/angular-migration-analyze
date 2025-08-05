@@ -1,0 +1,53 @@
+# Example GitLab CI configuration for ng-migration-analyzer
+
+stages:
+  - analyze
+  - report
+
+variables:
+  NODE_VERSION: "18"
+  NGMA_VERSION: "latest"
+
+angular-migration-analysis:
+  stage: analyze
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - npm install -g ng-migration-analyzer@${NGMA_VERSION}
+  script:
+    - ngma scan --ci --threshold high --export-plan --export-summary
+  artifacts:
+    when: always
+    paths:
+      - .ngma/
+    reports:
+      junit: .ngma/junit-report.xml  # If we add JUnit output support
+    expire_in: 30 days
+  only:
+    - merge_requests
+    - develop
+    - main
+
+generate-suggestions:
+  stage: report
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - angular-migration-analysis
+  before_script:
+    - npm install -g ng-migration-analyzer@${NGMA_VERSION}
+  script:
+    - ngma suggest --format markdown --output suggestions.md -r .ngma/analysis-report.json
+    - |
+      # Post comment to merge request if available
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        COMMENT=$(cat .ngma/suggestions.md | head -n 50)
+        curl --request POST \
+          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --data-urlencode "body=## 📋 Angular Migration Analysis\n\n$COMMENT\n\n[Full report](.ngma/suggestions.md)" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes"
+      fi
+  artifacts:
+    paths:
+      - .ngma/suggestions.md
+    expire_in: 30 days
+  only:
+    - merge_requests

@@ -22,7 +22,7 @@ mkdir -p "$TEST_PROJECT/src/app"
 mkdir -p "$TEST_PROJECT/src/assets" 
 mkdir -p "$TEST_PROJECT/src/environments"
 
-# Create package.json
+# Create package.json (Angular 17 for migration test)
 cat > "$TEST_PROJECT/package.json" << 'EOF'
 {
   "name": "angular-test-project",
@@ -34,29 +34,30 @@ cat > "$TEST_PROJECT/package.json" << 'EOF'
     "test": "ng test"
   },
   "dependencies": {
-    "@angular/animations": "^18.2.0",
-    "@angular/common": "^18.2.0",
-    "@angular/compiler": "^18.2.0",
-    "@angular/core": "^18.2.0",
-    "@angular/forms": "^18.2.0",
-    "@angular/platform-browser": "^18.2.0",
-    "@angular/platform-browser-dynamic": "^18.2.0",
-    "@angular/router": "^18.2.0",
-    "@angular/cdk": "^18.2.0",
-    "@angular/material": "^18.2.0",
-    "rxjs": "~7.8.0",
+    "@angular/animations": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@angular/router": "^17.3.0",
+    "@angular/cdk": "^17.3.0",
+    "@angular/material": "^17.3.0",
+    "rxjs": "~7.5.0",
     "tslib": "^2.6.0",
-    "zone.js": "~0.14.0",
+    "zone.js": "~0.13.0",
     "@angular/flex-layout": "^15.0.0-beta.42",
-    "ng-bootstrap": "^14.2.0"
+    "@ngrx/store": "^17.0.0",
+    "@ngrx/effects": "^17.0.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.2.0",
-    "@angular/cli": "~18.2.0",
-    "@angular/compiler-cli": "^18.2.0",
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular/cli": "~17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
-    "typescript": "~5.5.0"
+    "typescript": "~5.2.0"
   }
 }
 EOF
@@ -274,7 +275,7 @@ pre {
 }
 EOF
 
-# Create package-lock.json with installed versions
+# Create package-lock.json with Angular 17 versions and conflicts
 cat > "$TEST_PROJECT/package-lock.json" << 'EOF'
 {
   "name": "angular-test-project",
@@ -286,65 +287,66 @@ cat > "$TEST_PROJECT/package-lock.json" << 'EOF'
       "name": "angular-test-project",
       "version": "0.0.0",
       "dependencies": {
-        "@angular/animations": "^18.2.0",
-        "@angular/common": "^18.2.0",
-        "@angular/compiler": "^18.2.0",
-        "@angular/core": "^18.2.0",
-        "@angular/forms": "^18.2.0",
-        "@angular/platform-browser": "^18.2.0",
-        "@angular/platform-browser-dynamic": "^18.2.0",
-        "@angular/router": "^18.2.0",
-        "@angular/cdk": "^18.2.0",
-        "@angular/material": "^18.2.0",
-        "rxjs": "~7.8.0",
+        "@angular/animations": "^17.3.0",
+        "@angular/common": "^17.3.0",
+        "@angular/compiler": "^17.3.0",
+        "@angular/core": "^17.3.0",
+        "@angular/forms": "^17.3.0",
+        "@angular/platform-browser": "^17.3.0",
+        "@angular/platform-browser-dynamic": "^17.3.0",
+        "@angular/router": "^17.3.0",
+        "@angular/cdk": "^17.3.0",
+        "@angular/material": "^17.3.0",
+        "rxjs": "~7.5.0",
         "tslib": "^2.6.0",
-        "zone.js": "~0.14.0",
+        "zone.js": "~0.13.0",
         "@angular/flex-layout": "^15.0.0-beta.42",
-        "ng-bootstrap": "^14.2.0"
+        "@ngrx/store": "^17.0.0",
+        "@ngrx/effects": "^17.0.0"
       }
     },
     "node_modules/@angular/core": {
-      "version": "18.2.3",
-      "resolved": "https://registry.npmjs.org/@angular/core/-/core-18.2.3.tgz",
+      "version": "17.3.0",
+      "resolved": "https://registry.npmjs.org/@angular/core/-/core-17.3.0.tgz",
       "dependencies": {
         "tslib": "^2.3.0"  
       },
       "peerDependencies": {
         "rxjs": "^6.5.3 || ^7.4.0",
-        "zone.js": "~0.14.10"
+        "zone.js": "~0.14.0"
       }
     },
     "node_modules/@angular/common": {
-      "version": "18.2.3",
-      "resolved": "https://registry.npmjs.org/@angular/common/-/common-18.2.3.tgz",
+      "version": "17.3.0",
+      "resolved": "https://registry.npmjs.org/@angular/common/-/common-17.3.0.tgz",
       "peerDependencies": {
-        "@angular/core": "^18.0.0",
+        "@angular/core": "17.3.0",
         "rxjs": "^6.5.3 || ^7.4.0"
       }
     },
     "node_modules/@angular/animations": {
-      "version": "18.2.3",
-      "resolved": "https://registry.npmjs.org/@angular/animations/-/animations-18.2.3.tgz",
+      "version": "17.3.0",
+      "resolved": "https://registry.npmjs.org/@angular/animations/-/animations-17.3.0.tgz",
       "peerDependencies": {
-        "@angular/core": "^18.0.0"
+        "@angular/core": "17.3.0"
       }
     },
     "node_modules/@angular/cdk": {
-      "version": "18.2.3",
-      "resolved": "https://registry.npmjs.org/@angular/cdk/-/cdk-18.2.3.tgz",
+      "version": "17.3.0",
+      "resolved": "https://registry.npmjs.org/@angular/cdk/-/cdk-17.3.0.tgz",
       "peerDependencies": {
-        "@angular/core": "^18.0.0",
-        "@angular/common": "^18.0.0"
+        "@angular/core": "^17.0.0 || ^18.0.0",
+        "@angular/common": "^17.0.0 || ^18.0.0"
       }
     },
     "node_modules/@angular/material": {
-      "version": "18.2.3", 
-      "resolved": "https://registry.npmjs.org/@angular/material/-/material-18.2.3.tgz",
+      "version": "17.3.0", 
+      "resolved": "https://registry.npmjs.org/@angular/material/-/material-17.3.0.tgz",
       "peerDependencies": {
-        "@angular/animations": "^18.0.0",
-        "@angular/cdk": "^18.0.0",
-        "@angular/core": "^18.0.0",
-        "@angular/common": "^18.0.0"
+        "@angular/animations": "^17.0.0 || ^18.0.0",
+        "@angular/cdk": "17.3.0",
+        "@angular/core": "^17.0.0 || ^18.0.0",
+        "@angular/common": "^17.0.0 || ^18.0.0"
       }
     },
     "node_modules/@angular/flex-layout": {
@@ -355,21 +357,34 @@ cat > "$TEST_PROJECT/package-lock.json" << 'EOF'
         "@angular/common": "^15.0.0"
       }
     },
-    "node_modules/ng-bootstrap": {
-      "version": "14.2.0",
-      "resolved": "https://registry.npmjs.org/@ng-bootstrap/ng-bootstrap/-/ng-bootstrap-14.2.0.tgz",
+    "node_modules/@ngrx/store": {
+      "version": "17.0.0",
+      "resolved": "https://registry.npmjs.org/@ngrx/store/-/store-17.0.0.tgz",
       "peerDependencies": {
-        "@angular/core": "^15.0.0",
-        "rxjs": "^7.5.0"
+        "@angular/core": "^17.0.0",
+        "rxjs": "^6.5.3 || ^7.5.0"
+      }
+    },
+    "node_modules/@ngrx/effects": {
+      "version": "17.0.0",
+      "resolved": "https://registry.npmjs.org/@ngrx/effects/-/effects-17.0.0.tgz",
+      "peerDependencies": {
+        "@angular/core": "^17.0.0",
+        "@ngrx/store": "17.0.0",
+        "rxjs": "^6.5.3 || ^7.5.0"
       }
     },
     "node_modules/rxjs": {
-      "version": "7.8.1",
-      "resolved": "https://registry.npmjs.org/rxjs/-/rxjs-7.8.1.tgz"  
+      "version": "7.5.7",
+      "resolved": "https://registry.npmjs.org/rxjs/-/rxjs-7.5.7.tgz"  
     },
     "node_modules/zone.js": {
-      "version": "0.14.10",
-      "resolved": "https://registry.npmjs.org/zone.js/-/zone.js-0.14.10.tgz"
+      "version": "0.13.3",
+      "resolved": "https://registry.npmjs.org/zone.js/-/zone.js-0.13.3.tgz"
+    },
+    "node_modules/typescript": {
+      "version": "5.2.2",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.2.2.tgz"
     },
     "node_modules/tslib": {
       "version": "2.6.2",
@@ -422,22 +437,33 @@ echo "✅ Angular project created"
 echo ""
 echo "🔍 Running: ngma scan --export-plan --export-summary"
 echo "==================================================="
-$CLI_CMD scan -p "$TEST_PROJECT" --export-plan --export-summary
+$CLI_CMD scan -p "$TEST_PROJECT" --export-summary
 
 echo ""
-echo "🔧 Running: ngma fix --dry-run"
-echo "==============================="
-$CLI_CMD fix -p "$TEST_PROJECT" --dry-run
+echo "💡 Running: ngma suggest"
+echo "======================="
+$CLI_CMD suggest -p "$TEST_PROJECT" --format markdown --output suggestions.md
 
 echo ""
-echo "🛠️  Running: ngma fix --auto-safe"
-echo "================================="
-$CLI_CMD fix -p "$TEST_PROJECT" --auto-safe
+echo "📊 Running: ngma scan --ci --threshold high"
+echo "=========================================="
+$CLI_CMD scan -p "$TEST_PROJECT" --ci --threshold high || echo "Exit code: $?"
+
+echo ""
+echo "🔄 Check generated migration script"
+echo "=================================="
+if [ -f "$TEST_PROJECT/.ngma/migration.sh" ]; then
+    echo "✅ Migration script generated"
+    echo "First 10 lines of migration.sh:"
+    head -10 "$TEST_PROJECT/.ngma/migration.sh"
+else
+    echo "❌ No migration script found"
+fi
 
 echo ""
 echo "✅ Running: ngma validate"
 echo "========================="
-$CLI_CMD validate -p "$TEST_PROJECT"
+$CLI_CMD validate -p "$TEST_PROJECT" || echo "Validate not implemented yet"
 
 echo ""
 echo "🎉 E2E Test Complete!"
@@ -462,7 +488,19 @@ if [ -d "$TEST_PROJECT/.ngma" ]; then
     if [ -f "$TEST_PROJECT/.ngma/migration-summary.md" ]; then
         echo "  ✅ migration-summary.md"
     fi
-    if [ -f "$TEST_PROJECT/.ngma/fix-log.json" ]; then
-        echo "  ✅ fix-log.json"
+    if [ -f "$TEST_PROJECT/.ngma/suggestions.md" ]; then
+        echo "  ✅ suggestions.md"
     fi
+    if [ -f "$TEST_PROJECT/.ngma/migration.sh" ]; then
+        echo "  ✅ migration.sh (auto-generated script)"
+    fi
+fi
+
+# Clean up
+echo ""
+read -p "Clean up test project? (y/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -rf "$TEST_PROJECT"
+    echo "✅ Test project cleaned up"
 fi

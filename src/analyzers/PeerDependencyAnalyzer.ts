@@ -47,6 +47,11 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
 
           // Analyser chaque peer dependency
           for (const [peerName, peerVersion] of Object.entries(lockFilePeerDeps)) {
+            // Only check Angular-related dependencies and critical build tools
+            if (!this.isRelevantForMigration(peerName)) {
+              continue;
+            }
+            
             // Vérifier si la peer dependency est satisfaite
             if (!this.isPeerDependencySatisfied(peerName, peerVersion, allDeps)) {
               peerDeps.push({
@@ -123,5 +128,48 @@ export class PeerDependencyAnalyzer extends BaseAnalyzer {
     } catch (error) {
       return false;
     }
+  }
+  
+  private isRelevantForMigration(packageName: string): boolean {
+    // Angular packages
+    if (packageName.startsWith('@angular/')) {
+      return true;
+    }
+    
+    // Critical runtime dependencies for Angular
+    const criticalDependencies = [
+      'zone.js',
+      'rxjs',
+      'tslib',
+      'typescript'
+    ];
+    
+    if (criticalDependencies.includes(packageName)) {
+      return true;
+    }
+    
+    // Ignore test runners, build tools, and other dev dependencies
+    const ignoredPackages = [
+      'jest',
+      'jest-environment-jsdom',
+      'protractor',
+      'karma',
+      'jasmine',
+      'ng-packagr',
+      'browser-sync',
+      '@web/test-runner',
+      'tailwindcss',
+      'postcss',
+      'autoprefixer',
+      'webpack',
+      'rollup',
+      'vite',
+      'eslint',
+      'prettier',
+      'husky',
+      'lint-staged'
+    ];
+    
+    return !ignoredPackages.includes(packageName);
   }
 }

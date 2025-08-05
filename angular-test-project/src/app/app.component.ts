@@ -63,8 +63,8 @@ export class AppComponent implements OnInit {
   data: any = null;
   items = ['Item 1', 'Item 2', 'Item 3'];
   
-  @ViewChild('content') content!: ElementRef;
-  @ViewChild('sidebar') sidebar!: ElementRef;
+  @ViewChild('content', { static: false }) content!: ElementRef;
+  @ViewChild('sidebar', { static: false }) sidebar!: ElementRef;
   
   constructor(private http: HttpClient) {}
   

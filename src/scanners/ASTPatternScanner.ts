@@ -1,12 +1,21 @@
 import * as ts from 'typescript';
 import { dirname } from 'path';
-import { DeprecatedPattern } from '../types/index.js';
+import { DeprecatedPattern, DeprecatedPatternConfig } from '../types/index.js';
+import { PatternLibraryService } from '../services/PatternLibraryService.js';
 
 export class ASTPatternScanner {
   private program: ts.Program;
   private checker: ts.TypeChecker;
+  private patternConfigs: DeprecatedPatternConfig[] = [];
+  private patternLibrary: PatternLibraryService;
   
-  constructor(tsconfigPath: string) {
+  constructor(tsconfigPath: string, fromVersion?: string, toVersion?: string) {
+    this.patternLibrary = new PatternLibraryService();
+    
+    // Load pattern configurations if versions provided
+    if (fromVersion && toVersion) {
+      this.loadPatternConfigs(fromVersion, toVersion);
+    }
     const config = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     
     if (config.error) {
@@ -21,6 +30,10 @@ export class ASTPatternScanner {
     
     this.program = ts.createProgram(parsed.fileNames, parsed.options);
     this.checker = this.program.getTypeChecker();
+  }
+  
+  async loadPatternConfigs(fromVersion: string, toVersion: string): Promise<void> {
+    this.patternConfigs = await this.patternLibrary.fetchPatterns(fromVersion, toVersion);
   }
   
   scan(): DeprecatedPattern[] {
@@ -47,6 +60,7 @@ export class ASTPatternScanner {
           file: sourceFile.fileName,
           line: this.getLineNumber(sourceFile, node),
           column: this.getColumnNumber(sourceFile, node),
+          severity: 'warning',
           autoFixable: true,
           description: 'ViewChild with static: false is now the default'
         });
@@ -59,6 +73,7 @@ export class ASTPatternScanner {
           file: sourceFile.fileName,
           line: this.getLineNumber(sourceFile, node),
           column: this.getColumnNumber(sourceFile, node),
+          severity: 'error',
           autoFixable: true,
           description: 'ModuleWithProviders requires a generic type'
         });
@@ -79,6 +94,7 @@ export class ASTPatternScanner {
           file: sourceFile.fileName,
           line: this.getLineNumber(sourceFile, node),
           column: this.getColumnNumber(sourceFile, node),
+          severity: 'warning',
           autoFixable: true,
           description: 'Renderer is deprecated, use Renderer2'
         });
@@ -91,6 +107,7 @@ export class ASTPatternScanner {
           file: sourceFile.fileName,
           line: this.getLineNumber(sourceFile, node),
           column: this.getColumnNumber(sourceFile, node),
+          severity: 'info',
           autoFixable: true,
           description: 'Consider migrating to new control flow syntax (@if, @for, @switch)'
         });
@@ -156,6 +173,7 @@ export class ASTPatternScanner {
           file: node.getSourceFile().fileName,
           line: this.getLineNumber(node.getSourceFile(), node),
           column: this.getColumnNumber(node.getSourceFile(), node),
+          severity: 'warning',
           autoFixable: true,
           description: `Import from '${deprecated}' is deprecated, use '${replacement}'`
         };

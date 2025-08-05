@@ -222,47 +222,45 @@ export interface DeprecatedPattern {
   file: string;
   line: number;
   column?: number;
+  severity: 'error' | 'warning' | 'info';
   autoFixable: boolean;
   description: string;
 }
 
-export interface BreakingChange {
+export interface DeprecatedPatternConfig {
   id: string;
-  version: string;
-  category: 'api' | 'dependency' | 'tooling' | 'syntax';
-  severity: 'critical' | 'major' | 'minor';
+  name: string;
   description: string;
-  detection: {
-    filePattern?: string;
-    codePattern?: RegExp;
-    astQuery?: string;
-  };
-  solution: {
-    automatic?: boolean;
-    codeTransform?: string;
-    manualSteps?: string[];
-  };
-  examples: Array<{
-    before: string;
-    after: string;
-  }>;
+  filePattern: string;
+  patterns: string[];
+  severity: 'error' | 'warning' | 'info';
+  autoFixable: boolean;
+  replacement?: string;
+  documentation?: string;
 }
 
-export interface MigrationPlan {
-  phases: Array<{
-    name: string;
-    tasks: string[];
-    duration: string;
-  }>;
-  totalEstimate: string;
+export interface BreakingChange {
+  id: string;
+  title: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high';
+  effort?: 'low' | 'medium' | 'high' | 'very-high';
+  migration: string;
+  automated: boolean;
+  documentation?: string;
+  fromVersion: string;
+  toVersion: string;
+  category: string;
 }
+
 
 export interface DependencyAnalysis {
   incompatible: Array<{
     package: string;
     currentVersion: string;
-    requiredVersion: string;
+    maxSupportedAngular?: number;
     reason: string;
+    alternative?: string;
   }>;
   deprecated: Array<{
     package: string;
@@ -279,6 +277,8 @@ export interface PeerDependencyAnalysis {
     installed: string;
     resolution: string;
     impact?: string;
+    severity?: 'error' | 'warning';
+    message?: string;
   }>;
 }
 
@@ -290,15 +290,45 @@ export interface AnalysisReport {
     filesImpacted: number;
     breakingChanges: number;
     peerDepConflicts: number;
-    estimatedEffort: string;
   };
   dependencies: DependencyAnalysis;
   patterns: DeprecatedPattern[];
   peerDependencies: PeerDependencyAnalysis;
-  migrationPlan: MigrationPlan;
+  breakingChanges?: BreakingChange[];
 }
 
 export interface ValidationResult {
   passed: boolean;
   issues: string[];
+}
+
+export type SuggestionCategory = 'dependency' | 'code-pattern' | 'breaking-change' | 'peer-dependency' | 'configuration';
+export type SuggestionPriority = 'critical' | 'high' | 'medium' | 'low';
+
+export interface Suggestion {
+  id: string;
+  category: SuggestionCategory;
+  priority: SuggestionPriority;
+  title: string;
+  description: string;
+  recommendation: string;
+  effort: 'low' | 'medium' | 'high' | 'very-high';
+  code?: {
+    before: string;
+    after: string;
+    files: string[];
+  };
+  additionalSteps?: string[];
+  documentation?: string;
+  occurrences?: number;
+}
+
+export interface SuggestionsReport {
+  projectPath: string;
+  fromVersion: string;
+  toVersion: string;
+  suggestions: Suggestion[];
+  totalSuggestions: number;
+  byCriteria: Record<string, number>;
+  estimatedEffort: string;
 }

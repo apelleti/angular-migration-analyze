@@ -1,0 +1,110 @@
+name: Angular Migration Analysis
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      threshold:
+        description: 'Issue threshold (critical, high, medium, low)'
+        required: false
+        default: 'high'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Install ng-migration-analyzer
+      run: npm install -g ng-migration-analyzer@latest
+    
+    - name: Run migration analysis
+      id: analysis
+      run: |
+        ngma scan \
+          --ci \
+          --threshold ${{ github.event.inputs.threshold || 'high' }} \
+          --export-plan \
+          --export-summary \
+          --json > analysis-output.json || echo "ANALYSIS_FAILED=true" >> $GITHUB_OUTPUT
+    
+    - name: Generate suggestions
+      if: always()
+      run: |
+        ngma suggest \
+          --format markdown \
+          --output suggestions.md \
+          -r .ngma/analysis-report.json
+    
+    - name: Upload analysis artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: migration-analysis-${{ matrix.node-version }}
+        path: |
+          .ngma/
+          analysis-output.json
+    
+    - name: Comment PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read analysis report
+          let report;
+          try {
+            report = JSON.parse(fs.readFileSync('.ngma/analysis-report.json', 'utf8'));
+          } catch (e) {
+            console.error('Failed to read report:', e);
+            return;
+          }
+          
+          // Read suggestions (first 1000 chars)
+          let suggestions = '';
+          try {
+            suggestions = fs.readFileSync('.ngma/suggestions.md', 'utf8').substring(0, 1000);
+          } catch (e) {
+            suggestions = 'No suggestions generated.';
+          }
+          
+          const comment = `## 🔍 Angular Migration Analysis
+          
+          **Migration:** Angular ${report.fromVersion} → ${report.toVersion}
+          
+          ### 📊 Summary
+          - **Files Impacted:** ${report.summary.filesImpacted}
+          - **Breaking Changes:** ${report.summary.breakingChanges}
+          - **Peer Dep Conflicts:** ${report.summary.peerDepConflicts}
+          - **Estimated Effort:** ${report.summary.estimatedEffort}
+          
+          ### 📋 Top Suggestions
+          ${suggestions}...
+          
+          [View full report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Set job status
+      if: steps.analysis.outputs.ANALYSIS_FAILED == 'true'
+      run: exit 1

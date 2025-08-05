@@ -15,7 +15,6 @@ export function formatAnalysisReport(report: AnalysisReport): string {
   output.push(`  Files Impacted: ${chalk.yellow(report.summary.filesImpacted)}`);
   output.push(`  Breaking Changes: ${chalk.red(report.summary.breakingChanges)}`);
   output.push(`  Peer Dep Conflicts: ${chalk.yellow(report.summary.peerDepConflicts)}`);
-  output.push(`  Estimated Effort: ${chalk.magenta(report.summary.estimatedEffort)}`);
   
   // Dependencies Analysis
   if (report.dependencies) {
@@ -40,7 +39,49 @@ export function formatAnalysisReport(report: AnalysisReport): string {
   if (report.peerDependencies && report.peerDependencies.conflicts.length > 0) {
     output.push(chalk.bold('\n🔄 Peer Dependency Conflicts'));
     
-    report.peerDependencies.conflicts.forEach(conflict => {
+    // Separate incompatible packages from other conflicts
+    const incompatiblePackages = report.peerDependencies.conflicts.filter(c => 
+      c.resolution?.includes('is incompatible')
+    );
+    const otherConflicts = report.peerDependencies.conflicts.filter(c => 
+      !c.resolution?.includes('is incompatible')
+    );
+    
+    // Show incompatible packages first with warning
+    if (incompatiblePackages.length > 0) {
+      output.push(chalk.bgRed.white('\n  ⚠️  INCOMPATIBLE PACKAGES - Must be resolved before migration:'));
+      
+      // Group by the package causing the incompatibility
+      const packageGroups = new Map<string, typeof incompatiblePackages>();
+      incompatiblePackages.forEach(conflict => {
+        const match = conflict.resolution?.match(/(\S+) is incompatible/);
+        if (match) {
+          const pkg = match[1];
+          if (!packageGroups.has(pkg)) {
+            packageGroups.set(pkg, []);
+          }
+          packageGroups.get(pkg)!.push(conflict);
+        }
+      });
+      
+      packageGroups.forEach((conflicts, pkg) => {
+        output.push(chalk.yellow(`\n  📦 ${pkg}`));
+        output.push(chalk.gray(`     Requires Angular ${conflicts[0].required.replace('^', '')} but you have Angular ${report.fromVersion}`));
+        if (pkg === '@angular/flex-layout') {
+          output.push(chalk.cyan(`     → Replace with @angular/cdk/layout`));
+          output.push(chalk.gray(`     → See: https://github.com/angular/flex-layout/wiki/Using-Angular-CDK-Layout`));
+        } else {
+          output.push(chalk.cyan(`     → Update to a compatible version or remove`));
+        }
+      });
+      
+      if (otherConflicts.length > 0) {
+        output.push(chalk.bold('\n  Other conflicts:'));
+      }
+    }
+    
+    // Show other conflicts
+    otherConflicts.forEach(conflict => {
       output.push(chalk.red(`  ❌ ${conflict.package}`));
       output.push(`     Required: ${conflict.required}`);
       output.push(`     Installed: ${conflict.installed}`);
@@ -57,10 +98,7 @@ export function formatAnalysisReport(report: AnalysisReport): string {
     const groupedPatterns = groupPatternsByType(report.patterns);
     
     for (const [type, patterns] of Object.entries(groupedPatterns)) {
-      const emoji = patterns[0].autoFixable ? '🔧' : '⚠️';
-      const fixText = patterns[0].autoFixable ? chalk.green(' (auto-fixable)') : '';
-      
-      output.push(`  ${emoji} ${type}${fixText}: ${patterns.length} occurrences`);
+      output.push(`  ⚠️ ${type}: ${patterns.length} occurrences`);
       
       // Show first 3 files
       patterns.slice(0, 3).forEach(pattern => {
@@ -73,26 +111,12 @@ export function formatAnalysisReport(report: AnalysisReport): string {
     }
   }
   
-  // Migration Plan
-  if (report.migrationPlan) {
-    output.push(chalk.bold('\n📝 Migration Plan'));
-    
-    report.migrationPlan.phases.forEach((phase, index) => {
-      output.push(`  ${chalk.cyan(`Phase ${index + 1}: ${phase.name}`)} (${phase.duration})`);
-      phase.tasks.forEach(task => {
-        output.push(`    ✓ ${task}`);
-      });
-    });
-    
-    output.push(chalk.bold(`\n  Total Estimated Time: ${report.migrationPlan.totalEstimate}`));
-  }
-  
   // Recommendations
   output.push(chalk.bold('\n💡 Recommendations'));
   output.push('  1. Create a backup branch before starting migration');
-  output.push('  2. Run automated fixes first with: ngma fix --auto-safe');
-  output.push('  3. Address peer dependency conflicts before ng update');
-  output.push('  4. Test thoroughly after each migration phase');
+  output.push('  2. Address peer dependency conflicts before ng update');
+  output.push('  3. Update to latest minor version first if jumping multiple majors');
+  output.push('  4. Test thoroughly after migration');
   
   output.push(chalk.gray('\n' + '=' . repeat(50)));
   

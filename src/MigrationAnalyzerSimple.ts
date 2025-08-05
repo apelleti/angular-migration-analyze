@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
 import * as semver from 'semver';
 import { BreakingChangeDownloader } from './services/BreakingChangeDownloader.js';
 import { ASTPatternScanner } from './scanners/ASTPatternScanner.js';
@@ -9,7 +9,6 @@ import {
   MigrationConfig, 
   AnalysisReport, 
   DeprecatedPattern,
-  MigrationPlan,
   ValidationResult,
   BreakingChange
 } from './types/index.js';
@@ -85,7 +84,8 @@ export class MigrationAnalyzer {
     
     const majorVersion = String(coercedVersion.major);
     this.fromVersion = this.config.fromVersion || majorVersion;
-    this.toVersion = this.config.toVersion || String(coercedVersion.major + 1);
+    // Always use n+1 as target version
+    this.toVersion = String(Number(this.fromVersion) + 1);
     
     return majorVersion;
   }
@@ -106,17 +106,46 @@ export class MigrationAnalyzer {
     
     // Check known problematic packages
     const problematicPackages: Record<string, any> = {
-      '@angular/flex-layout': { status: 'deprecated', alternative: '@angular/cdk/layout' },
-      '@angular/http': { status: 'removed', alternative: '@angular/common/http' },
-      'ngx-bootstrap': { maxAngular: 16, alternative: 'ng-bootstrap' }
+      '@angular/flex-layout': { 
+        status: 'deprecated', 
+        alternative: '@angular/cdk/layout',
+        maxAngular: 15,
+        reason: 'Only supports Angular up to version 15'
+      },
+      '@angular/http': { 
+        status: 'removed', 
+        alternative: '@angular/common/http',
+        reason: 'Package has been removed in favor of @angular/common/http'
+      },
+      'ngx-bootstrap': { 
+        maxAngular: 16, 
+        alternative: 'ng-bootstrap',
+        reason: 'May not be compatible with latest Angular version'
+      }
     };
     
     for (const [pkg, info] of Object.entries(problematicPackages)) {
       if (packageJson.dependencies?.[pkg] || packageJson.devDependencies?.[pkg]) {
+        const currentVersion = packageJson.dependencies?.[pkg] || packageJson.devDependencies?.[pkg];
+        
+        // Check if package is incompatible with target Angular version
+        if (info.maxAngular && parseInt(this.fromVersion) > info.maxAngular) {
+          incompatibleDeps.push({ 
+            package: pkg, 
+            currentVersion,
+            maxSupportedAngular: info.maxAngular,
+            reason: info.reason,
+            alternative: info.alternative
+          });
+        }
+        
+        // Also add to deprecated if marked as such
         if (info.status === 'deprecated' || info.status === 'removed') {
-          deprecatedDeps.push({ package: pkg, ...info });
-        } else if (info.maxAngular && parseInt(this.toVersion) > info.maxAngular) {
-          incompatibleDeps.push({ package: pkg, ...info });
+          deprecatedDeps.push({ 
+            package: pkg, 
+            status: info.status,
+            alternative: info.alternative 
+          });
         }
       }
     }
@@ -138,7 +167,8 @@ export class MigrationAnalyzer {
     }
     
     try {
-      this.patternScanner = new ASTPatternScanner(tsconfigPath);
+      this.patternScanner = new ASTPatternScanner(tsconfigPath, this.fromVersion, this.toVersion);
+      await this.patternScanner.loadPatternConfigs(this.fromVersion, this.toVersion);
       return this.patternScanner.scan();
     } catch (error) {
       console.warn('Failed to scan patterns:', error.message);
@@ -159,13 +189,33 @@ export class MigrationAnalyzer {
         
         const actualInstalled = installedVersion || declaredVersion || 'not installed';
         
+        // Determine appropriate resolution
+        let resolution: string;
+        if (actualInstalled === 'not installed') {
+          resolution = `npm install ${dep.package}@${dep.requiredVersion}`;
+        } else if (dep.package.startsWith('@angular/') && dep.requiredBy) {
+          // For Angular packages, suggest updating the package that requires the older version
+          const installedMajor = semver.major(actualInstalled);
+          const requiredRange = dep.requiredVersion;
+          const requiredMajor = semver.coerce(requiredRange)?.major;
+          
+          if (installedMajor && requiredMajor && installedMajor > requiredMajor) {
+            // The installed version is newer than what's required - suggest updating the dependent package
+            resolution = `${dep.requiredBy} is incompatible (requires Angular ${requiredMajor} but you have Angular ${installedMajor}). Consider updating ${dep.requiredBy} to a version compatible with Angular ${installedMajor} or remove it`;
+          } else {
+            // The installed version is older - suggest updating to match requirement
+            resolution = `Update ${dep.package} from ${actualInstalled} to ${dep.requiredVersion}`;
+          }
+        } else {
+          // For non-Angular packages, default behavior
+          resolution = `Update ${dep.package} from ${actualInstalled} to ${dep.requiredVersion}`;
+        }
+        
         return {
           package: dep.package,
           required: dep.requiredVersion,
           installed: actualInstalled,
-          resolution: actualInstalled === 'not installed' 
-            ? `npm install ${dep.package}@${dep.requiredVersion}`
-            : `Update ${dep.package} from ${actualInstalled} to ${dep.requiredVersion}`
+          resolution
         };
       }) || [];
       
@@ -186,57 +236,6 @@ export class MigrationAnalyzer {
     }
   }
   
-  estimateEffort(patterns: DeprecatedPattern[], peerDeps: any): string {
-    const autoFixableCount = patterns.filter(p => p.autoFixable).length;
-    const manualFixCount = patterns.length - autoFixableCount;
-    const peerDepConflicts = peerDeps.conflicts?.length || 0;
-    
-    // Simple estimation algorithm
-    const hoursEstimate = 
-      (autoFixableCount * 0.1) + // 6 minutes per auto-fixable
-      (manualFixCount * 0.5) +    // 30 minutes per manual fix
-      (peerDepConflicts * 2);     // 2 hours per peer dep conflict
-    
-    if (hoursEstimate < 8) return `${Math.ceil(hoursEstimate)} hours`;
-    const days = Math.ceil(hoursEstimate / 8);
-    return `${days} day${days > 1 ? 's' : ''}`;
-  }
-  
-  generateMigrationPlan(): MigrationPlan {
-    return {
-      phases: [
-        {
-          name: 'Preparation',
-          tasks: [
-            'Backup project (git checkout -b migration-backup)',
-            'Update TypeScript to compatible version',
-            'Resolve peer dependency conflicts'
-          ],
-          duration: '2-4 hours'
-        },
-        {
-          name: 'Migration',
-          tasks: [
-            `Run: ng update @angular/core@${this.toVersion} @angular/cli@${this.toVersion}`,
-            'Apply automatic fixes: ngma fix --auto-safe',
-            'Fix remaining issues manually'
-          ],
-          duration: '4-8 hours'
-        },
-        {
-          name: 'Validation',
-          tasks: [
-            'Run tests: npm test',
-            'Build application: npm run build',
-            'Verify functionality manually',
-            'Run: ngma validate'
-          ],
-          duration: '2-3 hours'
-        }
-      ],
-      totalEstimate: '1-2 days'
-    };
-  }
   
   async saveReport(report: AnalysisReport, filename: string): Promise<void> {
     const dir = join(this.config.projectPath, '.ngma');
@@ -251,17 +250,6 @@ export class MigrationAnalyzer {
     );
   }
   
-  async exportMigrationPlan(plan: MigrationPlan, filename: string): Promise<void> {
-    const dir = join(this.config.projectPath, '.ngma');
-    
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-    
-    const markdown = this.formatMigrationPlanAsMarkdown(plan);
-    writeFileSync(join(dir, filename), markdown);
-  }
-  
   async exportMigrationSummary(report: AnalysisReport, filename: string): Promise<void> {
     const dir = join(this.config.projectPath, '.ngma');
     
@@ -273,55 +261,102 @@ export class MigrationAnalyzer {
     writeFileSync(join(dir, filename), markdown);
   }
   
-  private formatMigrationPlanAsMarkdown(plan: MigrationPlan): string {
-    let markdown = `# Angular Migration Plan\n\n`;
-    markdown += `**Total Estimated Time:** ${plan.totalEstimate}\n\n`;
-    
-    plan.phases.forEach((phase, index) => {
-      markdown += `## Phase ${index + 1}: ${phase.name}\n\n`;
-      markdown += `**Duration:** ${phase.duration}\n\n`;
-      markdown += `### Tasks:\n\n`;
-      
-      phase.tasks.forEach(task => {
-        markdown += `- [ ] ${task}\n`;
-      });
-      
-      markdown += `\n`;
-    });
-    
-    return markdown;
-  }
-  
   private formatMigrationSummaryAsMarkdown(report: AnalysisReport): string {
     let markdown = `# Angular Migration Summary\n\n`;
-    markdown += `**Project:** ${report.projectPath}\n`;
+    // Use basename for consistency with console output
+    const projectName = report.projectPath === '.' || report.projectPath === './' 
+      ? basename(process.cwd())
+      : basename(report.projectPath);
+    markdown += `**Project:** ${projectName}\n`;
     markdown += `**Migration:** Angular ${report.fromVersion} → ${report.toVersion}\n\n`;
     
     markdown += `## Summary\n\n`;
     markdown += `- **Files Impacted:** ${report.summary.filesImpacted}\n`;
     markdown += `- **Breaking Changes:** ${report.summary.breakingChanges}\n`;
-    markdown += `- **Peer Dependency Conflicts:** ${report.summary.peerDepConflicts}\n`;
-    markdown += `- **Estimated Effort:** ${report.summary.estimatedEffort}\n\n`;
+    markdown += `- **Peer Dependency Conflicts:** ${report.summary.peerDepConflicts}\n\n`;
     
     if (report.patterns.length > 0) {
       markdown += `## Deprecated Patterns Found\n\n`;
-      report.patterns.forEach((pattern, index) => {
-        markdown += `### ${index + 1}. ${pattern.type}\n\n`;
-        markdown += `**File:** \`${pattern.file}\`\n`;
-        markdown += `**Line:** ${pattern.line}\n`;
-        markdown += `**Description:** ${pattern.description}\n`;
-        markdown += `**Auto-fixable:** ${pattern.autoFixable ? '✅ Yes' : '❌ No'}\n\n`;
+      
+      // Group patterns by type for consistency with console output
+      const groupedPatterns: Record<string, typeof report.patterns> = {};
+      report.patterns.forEach(pattern => {
+        if (!groupedPatterns[pattern.type]) {
+          groupedPatterns[pattern.type] = [];
+        }
+        groupedPatterns[pattern.type].push(pattern);
+      });
+      
+      Object.entries(groupedPatterns).forEach(([type, patterns]) => {
+        markdown += `### ⚠️ ${type}\n\n`;
+        markdown += `**Occurrences:** ${patterns.length}\n`;
+        markdown += `**Description:** ${patterns[0].description}\n\n`;
+        markdown += `**Locations:**\n`;
+        patterns.forEach(pattern => {
+          // Make file paths relative and consistent with console
+          const relativePath = pattern.file.startsWith('/') 
+            ? pattern.file.replace(process.cwd() + '/', '')
+            : pattern.file;
+          markdown += `- \`${relativePath}:${pattern.line}\`\n`;
+        });
+        markdown += `\n`;
       });
     }
     
     if (report.peerDependencies.conflicts.length > 0) {
       markdown += `## Peer Dependency Conflicts\n\n`;
-      report.peerDependencies.conflicts.forEach((conflict, index) => {
-        markdown += `### ${index + 1}. ${conflict.package}\n\n`;
-        markdown += `**Required:** ${conflict.required}\n`;
-        markdown += `**Installed:** ${conflict.installed}\n`;
-        markdown += `**Impact:** ${conflict.impact}\n\n`;
-      });
+      
+      // Separate incompatible packages from other conflicts
+      const incompatiblePackages = report.peerDependencies.conflicts.filter(c => 
+        c.resolution?.includes('is incompatible')
+      );
+      const otherConflicts = report.peerDependencies.conflicts.filter(c => 
+        !c.resolution?.includes('is incompatible')
+      );
+      
+      if (incompatiblePackages.length > 0) {
+        markdown += `### ⚠️ Incompatible Packages\n\n`;
+        markdown += `The following packages are incompatible with your current Angular version and must be addressed before migration:\n\n`;
+        
+        // Group by the package causing the incompatibility
+        const packageGroups = new Map<string, typeof incompatiblePackages>();
+        incompatiblePackages.forEach(conflict => {
+          const match = conflict.resolution?.match(/(\S+) is incompatible/);
+          if (match) {
+            const pkg = match[1];
+            if (!packageGroups.has(pkg)) {
+              packageGroups.set(pkg, []);
+            }
+            packageGroups.get(pkg)!.push(conflict);
+          }
+        });
+        
+        packageGroups.forEach((conflicts, pkg) => {
+          markdown += `#### ${pkg}\n\n`;
+          markdown += `This package requires Angular ${conflicts[0].required.replace('^', '')} but your project uses Angular ${report.fromVersion}.\n\n`;
+          
+          if (pkg === '@angular/flex-layout') {
+            markdown += `**Recommended Action:** Replace with @angular/cdk/layout\n`;
+            markdown += `- [Migration Guide](https://github.com/angular/flex-layout/wiki/Using-Angular-CDK-Layout)\n`;
+          } else {
+            markdown += `**Recommended Actions:**\n`;
+            markdown += `- Check if a newer version supports Angular ${report.fromVersion}\n`;
+            markdown += `- Remove the package if no longer needed\n`;
+            markdown += `- Find an alternative package\n`;
+          }
+          markdown += `\n`;
+        });
+      }
+      
+      if (otherConflicts.length > 0) {
+        markdown += `### Other Dependency Conflicts\n\n`;
+        otherConflicts.forEach((conflict, index) => {
+          markdown += `#### ${index + 1}. ${conflict.package}\n\n`;
+          markdown += `**Required:** ${conflict.required}\n`;
+          markdown += `**Installed:** ${conflict.installed}\n`;
+          markdown += `**Resolution:** ${conflict.resolution}\n\n`;
+        });
+      }
     }
     
     return markdown;
